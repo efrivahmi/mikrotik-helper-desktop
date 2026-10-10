@@ -23,6 +23,8 @@ Untuk mengaktifkannya kemudian, gunakan akses dengan scope `workflow`, pindahkan
 
 Atas instruksi pemilik, arsip lengkap kedua workspace diunggah sebagai asset Release private pada repo masing-masing. Backup helper mencakup inventory, backup konfigurasi, seluruh hasil operasi dan rencana, runtime serta disk lab, dan key router yang dirujuk inventory. Backup desktop mencakup source, dependensi, hasil build/installer, data aplikasi di userData, serta key yang dirujuk inventory aplikasi. File yang diabaikan Git tetap tercakup dalam arsip.
 
+Arsip besar dibagi menjadi bagian 32 MiB yang diverifikasi menggunakan SHA256 dari server GitHub. Asset `WORKSPACE-PARTS.json` serta alat pemulihan pada source menyatukannya kembali dan memeriksa checksum arsip lengkap.
+
 Arsip membawa manifest SHA256 untuk file, mode permission dan symlink. Folder `.git` tidak disertakan karena riwayat source sudah berada di repo. Database SQLite aplikasi disalin dengan backup API SQLite agar WAL tersertakan dalam snapshot yang konsisten.
 
 Simpan arsip credential dalam repo private. Private repository dan asset Release harus tetap private; backup ini membawa secret yang diperlukan untuk pemulihan. Data safeStorage yang dienkripsi OS, jika kelak tersedia, memerlukan keyring OS asal atau pengisian ulang credential di komputer baru.

@@ -1,10 +1,20 @@
 # Pemulihan workspace dari GitHub private
 
-Backup lengkap ada di asset Release bertajuk Backup workspace pada repo masing-masing. Download file `*-workspace.tar.gz` dan `SHA256SUMS.txt`. Arsip ini berisi credential; simpan dan ekstrak hanya pada komputer yang Anda kelola.
+Backup lengkap ada di asset Release bertajuk Backup workspace pada repo masing-masing. Arsip besar dibagi menjadi asset `*-workspace.tar.gz.part-0000` dan seterusnya. Download semua bagian, `WORKSPACE-PARTS.json`, dan `SHA256SUMS.txt` dari repo yang sama. Arsip ini berisi credential; simpan dan ekstrak hanya pada komputer yang Anda kelola.
 
 ## Salinan kecil credential dan pengaturan
 
 Asset `credentials-and-settings.tar.gz` tersedia terpisah untuk memulihkan SSH key dan database pengaturan tanpa mengunduh seluruh runtime/installer. Periksa dengan `sha256sum -c CREDENTIAL-SHA256SUMS.txt`. Asset ini memerlukan source dari clone repo dan tidak menggantikan backup lengkap workspace.
+
+## Menyatukan bagian backup
+
+Simpan semua bagian dan manifest pada satu folder, lalu jalankan alat pemulihan dari source repo:
+
+```bash
+python3 scripts/restore-release-parts.py /lokasi/unduhan-backup
+```
+
+Alat memeriksa ukuran, urutan, checksum setiap bagian, dan checksum arsip lengkap. Ia menghasilkan `*-workspace.tar.gz` tanpa mengekstrak atau menimpa folder project. Bagian yang tidak lengkap/berubah ditolak.
 
 ## Memeriksa unduhan
 
