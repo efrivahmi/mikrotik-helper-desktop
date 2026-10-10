@@ -84,7 +84,7 @@ build/          ikon aplikasi
 release/        hasil installer, portable dan AppImage
 ```
 
-Data pengguna dibuat di direktori userData Electron, ditampilkan pada **Pengaturan → Workspace lokal**. Source, skill bawaan, dan paket distribusi tidak berisi inventory atau private key Anda. Hasil impor tetap di komputer yang melakukan impor.
+Data pengguna dibuat di direktori userData Electron, ditampilkan pada **Pengaturan → Workspace lokal**. Source, skill bawaan, dan paket distribusi tidak berisi inventory atau private key Anda. Hasil impor berada di komputer yang melakukan impor dan disertakan dalam backup workspace private atas instruksi pemilik.
 
 ## Batas penggunaan versi ini
 
@@ -94,6 +94,8 @@ Paket Windows dibangun dari Linux; validasi pada Windows native tetap diperlukan
 
 ## Repository GitHub
 
-Source aplikasi disimpan di repository public `efrivahmi/mikrotik-helper-desktop`. Helper Python disimpan terpisah di `efrivahmi/mikrotik-helper-agent`. Inventory, credential, database pengguna, dan arsip operasional lokal dikecualikan dari Git.
+Source aplikasi disimpan di repository private `efrivahmi/mikrotik-helper-desktop`. Helper Python disimpan terpisah di `efrivahmi/mikrotik-helper-agent`. Inventory, credential, database pengguna, dan arsip operasional lokal dikecualikan dari Git.
 
 Template GitHub Actions tersedia di [docs/ci/build.yml](docs/ci/build.yml). Aktivasi dan status pengembangan dijelaskan di [docs/GITHUB.md](docs/GITHUB.md).
+
+Backup lengkap folder, data aplikasi, dan SSH key yang dirujuk inventory tersedia sebagai asset Release private. Lihat [pemulihan workspace](docs/RECOVERY.md).
