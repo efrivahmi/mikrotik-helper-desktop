@@ -6,6 +6,16 @@ Backup lengkap ada di asset Release bertajuk Backup workspace pada repo masing-m
 
 Asset `credentials-and-settings.tar.gz` tersedia terpisah untuk memulihkan SSH key dan database pengaturan tanpa mengunduh seluruh runtime/installer. Periksa dengan `sha256sum -c CREDENTIAL-SHA256SUMS.txt`. Asset ini memerlukan source dari clone repo dan tidak menggantikan backup lengkap workspace.
 
+Dari folder unduhan, ekstrak salinan kecil ini ke folder baru:
+
+```bash
+sha256sum -c CREDENTIAL-SHA256SUMS.txt
+mkdir -m 700 recovered-access
+tar --extract --gzip --file credentials-and-settings.tar.gz --directory recovered-access --no-same-owner
+```
+
+`recovered-access/credentials/ssh/` membawa key router dan `recovered-access/local-data/helper.sqlite` membawa database pengaturan. Tutup aplikasi sebelum menyalin database kembali ke userData; sesuaikan lokasi key pada inventory bila berpindah komputer.
+
 ## Menyatukan bagian backup
 
 Simpan semua bagian dan manifest pada satu folder, lalu jalankan alat pemulihan dari source repo:
