@@ -1,0 +1,94 @@
+{
+  "name": "mikrotik-helper-desktop",
+  "productName": "MikroTik Helper",
+  "version": "1.1.0",
+  "description": "Desktop console for evidence-based MikroTik operations",
+  "author": "MikroTik Helper Workspace",
+  "license": "UNLICENSED",
+  "private": true,
+  "main": "dist/main/main.cjs",
+  "scripts": {
+    "dev": "node scripts/dev.mjs",
+    "build": "tsc --noEmit && vite build && node scripts/build-main.mjs",
+    "start": "electron .",
+    "test": "tsx --test tests/*.test.ts",
+    "test:ui": "node scripts/smoke.mjs",
+    "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
+    "dist:linux": "npm run build && electron-builder --linux AppImage --x64 --publish never",
+    "format": "prettier --write src scripts tests docs README.md"
+  },
+  "dependencies": {
+    "ssh2": "1.17.0",
+    "zod": "4.6.5"
+  },
+  "devDependencies": {
+    "@types/node": "24.19.1",
+    "@types/react": "19.3.0",
+    "@types/react-dom": "19.3.0",
+    "@types/ssh2": "1.15.6",
+    "@vitejs/plugin-react": "6.1.1",
+    "electron": "44.5.1",
+    "electron-builder": "26.15.3",
+    "esbuild": "0.28.2",
+    "lucide-react": "1.51.0",
+    "playwright": "1.63.0",
+    "prettier": "3.9.9",
+    "react": "19.3.0",
+    "react-dom": "19.3.0",
+    "tsx": "4.23.15",
+    "typescript": "7.0.2",
+    "vite": "8.3.2"
+  },
+  "build": {
+    "appId": "id.mikrotikhelper.desktop",
+    "productName": "MikroTik Helper",
+    "asar": true,
+    "directories": {
+      "output": "release",
+      "buildResources": "build"
+    },
+    "files": [
+      "dist/**/*",
+      "package.json",
+      "!node_modules/cpu-features/**/*",
+      "!node_modules/ssh2/lib/protocol/crypto/build/**/*",
+      "build/icon.png"
+    ],
+    "extraResources": [
+      {
+        "from": "resources/skills",
+        "to": "skills"
+      }
+    ],
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "signAndEditExecutable": true,
+      "icon": "build/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "perMachine": false,
+      "allowToChangeInstallationDirectory": true,
+      "createDesktopShortcut": true,
+      "artifactName": "MikroTik-Helper-Setup-${version}-${arch}.${ext}"
+    },
+    "linux": {
+      "target": [
+        "AppImage"
+      ],
+      "category": "Network",
+      "icon": "build/icon.png",
+      "artifactName": "MikroTik-Helper-${version}-${arch}.${ext}",
+      "syncDesktopName": true
+    },
+    "npmRebuild": false,
+    "portable": {
+      "artifactName": "MikroTik-Helper-Portable-${version}-${arch}.${ext}"
+    }
+  },
+  "type": "module",
+  "desktopName": "mikrotik-helper.desktop"
+}

@@ -1,0 +1,22 @@
+{
+  "name": "vpn-check",
+  "title": "Kondisi L2TP & IPsec",
+  "version": "1.0.0",
+  "mode": "read-only",
+  "purpose": "Mengumpulkan status tunnel, peer, policy dan route tanpa restart layanan.",
+  "domains": ["vpn", "routing"],
+  "commands": [
+    "/interface l2tp-client print detail",
+    "/ip ipsec active-peers print detail",
+    "/ip ipsec policy print detail",
+    "/ip route print detail",
+    "/log print"
+  ],
+  "checks": [
+    "Tunnel running",
+    "Peer established",
+    "Route menuju endpoint",
+    "Log negosiasi"
+  ],
+  "safety": ["Tidak menghapus dynamic policy atau me-restart tunnel."]
+}

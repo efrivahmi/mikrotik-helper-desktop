@@ -1,0 +1,27 @@
+{
+  "name": "bandwidth-review",
+  "title": "Pemeriksaan bandwidth & PCQ",
+  "version": "1.0.0",
+  "mode": "read-only",
+  "purpose": "Mengumpulkan konfigurasi dan statistik antrean untuk menilai pemerataan bandwidth. Counter drop bersifat kumulatif; bandingkan beberapa sampel.",
+  "domains": ["qos", "hotspot", "capacity"],
+  "commands": [
+    "/system resource print",
+    "/ip hotspot active print count-only",
+    "/queue tree print detail",
+    "/queue tree print stats",
+    "/queue type print detail",
+    "/queue simple print count-only",
+    "/ip hotspot user profile print detail",
+    "/ip firewall mangle print detail",
+    "/interface print stats"
+  ],
+  "checks": [
+    "Classifier PCQ src/dst-address",
+    "Batas parent dan profile",
+    "Cakupan subnet mangle",
+    "CPU dan jumlah user",
+    "Perubahan counter antar sampel"
+  ],
+  "safety": ["Tidak mengubah queue atau memutus sesi login."]
+}

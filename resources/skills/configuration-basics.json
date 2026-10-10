@@ -1,0 +1,54 @@
+{
+  "name": "configuration-basics",
+  "title": "RouterOS Basic Configuration Planner",
+  "version": "1.0.0",
+  "level": "ccna-mtcna",
+  "mode": "plan-only",
+  "domains": [
+    "identity",
+    "interface",
+    "vlan",
+    "ip-address",
+    "dhcp",
+    "dns",
+    "nat",
+    "firewall",
+    "static-route",
+    "hotspot"
+  ],
+  "purpose": "Membantu menyusun konfigurasi dasar berdasarkan tujuan yang eksplisit.",
+  "required-input": [
+    "RouterOS version",
+    "router role",
+    "WAN interface and gateway",
+    "LAN/VLAN names and subnets",
+    "DHCP ranges",
+    "DNS policy",
+    "NAT requirement",
+    "management subnet",
+    "rollback window"
+  ],
+  "workflow": [
+    "inventarisasi current state",
+    "validasi subnet dan gateway",
+    "buat plan apply dan rollback",
+    "review syntax dan impact",
+    "backup wajib",
+    "apply terkonfirmasi",
+    "verify ping/DNS/DHCP/NAT/routing",
+    "documentasi"
+  ],
+  "guardrails": [
+    "Tidak mengubah management access tanpa jalur alternatif.",
+    "Tidak membuat DHCP overlap.",
+    "Tidak membuat default route tanpa health-check/failover design.",
+    "Tidak membuat firewall final drop sebelum rule management dan established/related jelas.",
+    "Tidak menganggap konfigurasi dasar cocok untuk produksi tanpa assessment."
+  ],
+  "output": [
+    "assumption list",
+    "apply-basics.rsc",
+    "rollback-basics.rsc",
+    "verification checklist"
+  ]
+}

@@ -1,0 +1,64 @@
+{
+  "name": "campus-baseline",
+  "title": "Campus Router Baseline",
+  "version": "1.0.0",
+  "level": "ccna-mtcna-advanced",
+  "mode": "read-only",
+  "domains": [
+    "interface",
+    "vlan",
+    "addressing",
+    "routing",
+    "firewall",
+    "nat",
+    "dns",
+    "dhcp",
+    "hotspot",
+    "qos",
+    "vpn",
+    "capacity"
+  ],
+  "purpose": "Membuat baseline dan daftar risiko sebelum perubahan produksi.",
+  "commands": [
+    "/system identity print",
+    "/system resource print",
+    "/system package print",
+    "/interface print detail",
+    "/interface vlan print detail",
+    "/ip address print detail",
+    "/ip route print detail",
+    "/ip firewall filter print detail",
+    "/ip firewall nat print detail",
+    "/ip dns print detail",
+    "/ip dhcp-server print detail",
+    "/ip hotspot print detail",
+    "/ip firewall mangle print detail",
+    "/queue tree print detail",
+    "/ip ipsec active-peers print detail",
+    "/log print without-paging"
+  ],
+  "checks": [
+    "management service exposure",
+    "input firewall final drop",
+    "DNS remote requests and WAN exposure",
+    "VLAN/subnet overlap",
+    "default route and policy routing",
+    "NAT per WAN",
+    "Hotspot profile guardrail versus queue fairness",
+    "packet-mark versus routing-mark separation",
+    "IPsec peer and stale negotiation indicators",
+    "CPU/RAM/connection/active-user capacity"
+  ],
+  "output": [
+    "evidence pack",
+    "assessment.md",
+    "assessment.json",
+    "prioritized findings",
+    "recommended plan without automatic apply"
+  ],
+  "safety": [
+    "Tidak melakukan add/set/remove/disable/enable.",
+    "Tidak mengubah route, VLAN, firewall, NAT, VPN, atau service.",
+    "Secret harus disamarkan sebelum evidence disimpan."
+  ]
+}
