@@ -14,7 +14,7 @@ manifest = json.loads((root / 'WORKSPACE-PARTS.json').read_text())
 if manifest.get('format') != 'mikrotik-workspace-parts-v1':
     raise SystemExit('Unsupported backup manifest')
 name = manifest['archive_name']
-if not isinstance(name, str) or Path(name).name != name or not name.endswith('-workspace.tar.gz'):
+if not isinstance(name, str) or Path(name).name != name or not name.endswith(('-workspace.tar.gz', '-workspace.bundle')):
     raise SystemExit('Invalid archive filename')
 parts = manifest['parts']
 if not isinstance(parts, list) or not parts:
@@ -50,4 +50,4 @@ if total != manifest['archive_bytes'] or full.hexdigest() != manifest['archive_s
     raise SystemExit('Complete archive checksum mismatch; incomplete assembly kept')
 partial.rename(output)
 print('Verified complete archive:', output)
-print('Extract into an empty directory; follow RECOVERY.md')
+print('Restore into an empty directory; follow RECOVERY.md')
