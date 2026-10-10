@@ -2,6 +2,10 @@
 
 Backup lengkap ada di asset Release bertajuk Backup workspace pada repo masing-masing. Download file `*-workspace.tar.gz` dan `SHA256SUMS.txt`. Arsip ini berisi credential; simpan dan ekstrak hanya pada komputer yang Anda kelola.
 
+## Salinan kecil credential dan pengaturan
+
+Asset `credentials-and-settings.tar.gz` tersedia terpisah untuk memulihkan SSH key dan database pengaturan tanpa mengunduh seluruh runtime/installer. Periksa dengan `sha256sum -c CREDENTIAL-SHA256SUMS.txt`. Asset ini memerlukan source dari clone repo dan tidak menggantikan backup lengkap workspace.
+
 ## Memeriksa unduhan
 
 ```bash
