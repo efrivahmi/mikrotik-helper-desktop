@@ -8,7 +8,7 @@ import {
 import { detailRows } from "./routeros";
 import { singletonFields } from "./routeros-literals";
 
-export const STANDARDS_VERSION = "2026.10.1";
+export const STANDARDS_VERSION = "2026.10.2";
 export const STANDARD_SOURCES = {
   mtcna: {
     title: "MTCNA — kurikulum dasar",
@@ -421,23 +421,27 @@ export function assessStandards(
           i,
         );
       if (["vlan-id", "pvid", "vlan-ids"].includes(key)) {
-        const valid =
+        const validRange =
           items(value).length > 0 &&
           items(value).every((x) => {
             const [a, b = a, ...rest] = x.split("-");
             return (
               !rest.length &&
-              /^\d+$/.test(a) &&
-              /^\d+$/.test(b) &&
+              /^[1-9]\d*$/.test(a) &&
+              /^[1-9]\d*$/.test(b) &&
               +a >= 1 &&
               +b <= 4094 &&
               +a <= +b
             );
           });
+        const valid =
+          key === "vlan-ids"
+            ? validRange
+            : /^[1-9]\d*$/.test(value) && Number(value) <= 4094;
         check(
           "VLAN-ID",
           valid,
-          `${label}: VLAN/PVID harus 1–4094; rentang harus berurutan.`,
+          `${label}: VLAN ID/PVID memakai satu angka 1–4094. Daftar/rentang berurutan hanya tersedia pada tabel VLAN.`,
           "bridge",
           i,
         );
