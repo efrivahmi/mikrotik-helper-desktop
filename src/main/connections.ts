@@ -50,6 +50,7 @@ export async function inspectConnection(
   router: Router,
   secret: string | undefined,
   checkIdentity: (session: Session) => Promise<string>,
+  credentialError?: ConnectionError,
 ): Promise<ConnectionReport> {
   const report: ConnectionReport = {
     id: randomUUID(),
@@ -67,13 +68,14 @@ export async function inspectConnection(
         report.localAddresses.push(address.address);
   let credentialOK = true;
   try {
+    if (credentialError) throw credentialError;
     validateCredentials(router, secret);
     report.steps.push({
       label: "Credential lokal",
       state: "pass",
       detail:
         router.auth === "key"
-          ? "File private key dapat dibaca; key tidak dikirim ke laporan."
+          ? "Private key dapat dibaca dan dibuka; key tidak dikirim ke laporan."
           : "Password tersedia untuk sesi koneksi.",
     });
   } catch (error) {

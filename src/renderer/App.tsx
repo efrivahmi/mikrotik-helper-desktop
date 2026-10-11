@@ -55,11 +55,26 @@ import { detailRows } from "../shared/routeros";
 
 const api = window.helper.invoke;
 const connectionLabels: Record<ConnectionState["status"], string> = {
-  untested: "Belum diperiksa", checking: "Memeriksa koneksi", "trust-required": "Host key perlu diverifikasi",
-  connecting: "Menghubungkan SSH", reachable: "SSH terverifikasi", unreachable: "Tidak dapat dijangkau",
-  "auth-failed": "Credential perlu diperbaiki", "host-key-changed": "Host key berubah", "identity-mismatch": "Identity berbeda",
+  untested: "Belum diperiksa",
+  checking: "Memeriksa koneksi",
+  "trust-required": "Host key perlu diverifikasi",
+  connecting: "Menghubungkan SSH",
+  reachable: "SSH terverifikasi",
+  unreachable: "Tidak dapat dijangkau",
+  "auth-failed": "Credential perlu diperbaiki",
+  "host-key-changed": "Host key berubah",
+  "identity-mismatch": "Identity berbeda",
 };
-const rate = (n?: number) => n === undefined ? "—" : n >= 1e9 ? `${(n / 1e9).toFixed(2)} Gbps` : n >= 1e6 ? `${(n / 1e6).toFixed(2)} Mbps` : n >= 1e3 ? `${(n / 1e3).toFixed(1)} kbps` : `${Math.round(n)} bps`;
+const rate = (n?: number) =>
+  n === undefined
+    ? "—"
+    : n >= 1e9
+      ? `${(n / 1e9).toFixed(2)} Gbps`
+      : n >= 1e6
+        ? `${(n / 1e6).toFixed(2)} Mbps`
+        : n >= 1e3
+          ? `${(n / 1e3).toFixed(1)} kbps`
+          : `${Math.round(n)} bps`;
 const nav = [
   ["overview", "Ringkasan", Gauge],
   ["routers", "Router", RouterIcon],
@@ -283,8 +298,10 @@ export function App() {
     id: string;
     fingerprint: string;
     action?: { method: string; input?: unknown; success?: string };
+    connectAfterTrust?: boolean;
   } | null>(null);
-  const [connectionReport, setConnectionReport] = useState<ConnectionReport | null>(null);
+  const [connectionReport, setConnectionReport] =
+    useState<ConnectionReport | null>(null);
   const [remove, setRemove] = useState<Router | null>(null);
   const [selectedJob, setSelectedJob] = useState<Job | null>(null);
   const [planForm, setPlanForm] = useState(false);
@@ -299,6 +316,7 @@ export function App() {
   const [chat, setChat] = useState("");
   const [fatal, setFatal] = useState("");
   const chatEnd = useRef<HTMLDivElement>(null);
+  const activeJobs = useRef(new Set<string>());
   const refresh = useCallback(async () => {
     try {
       const data = await api<AppState>("state", selected || undefined);
@@ -347,18 +365,69 @@ export function App() {
     }
   }, [toast]);
   const router = state?.routers.find((r) => r.id === selected);
-  const snapshot = state?.snapshots.find((s) => s.routerId === selected && s.source === "live");
+  const snapshot = state?.snapshots.find(
+    (s) => s.routerId === selected && s.source === "live",
+  );
   const connection = state?.connections.find((c) => c.routerId === selected);
-  const currentSnapshot = !!snapshot && connection?.status === "reachable" && Date.now() - Date.parse(snapshot.createdAt) < 120000 && snapshot.metrics.identity !== undefined && snapshot.metrics.cpu !== undefined;
+  const currentSnapshot =
+    !!snapshot &&
+    connection?.status === "reachable" &&
+    Date.now() - Date.parse(snapshot.createdAt) < 120000 &&
+    snapshot.metrics.identity !== undefined &&
+    snapshot.metrics.cpu !== undefined;
   const jobs = state?.jobs.filter((j) => j.routerId === selected) || [];
   const busy = jobs.some((j) => j.state === "running");
+  useEffect(() => {
+    for (const job of state?.jobs || []) {
+      if (!activeJobs.current.has(job.id) || job.state === "running") continue;
+      activeJobs.current.delete(job.id);
+      setToast({
+        text:
+          job.state === "failed"
+            ? `${job.title} gagal: ${job.error || "Lihat detail pekerjaan."}`
+            : `${job.title} selesai.`,
+        bad: job.state === "failed",
+      });
+    }
+  }, [state?.jobs]);
   const run = useCallback(
     async (method: string, input?: unknown, success?: string) => {
       setPending(true);
       try {
         const result = await api(method, input);
+        if (method === "chat" && result) setChat("");
+        if (
+          [
+            "snapshot",
+            "backup",
+            "diagnostic",
+            "skill.run",
+            "chat",
+            "plan.apply",
+            "plan.reconcile",
+          ].includes(method) &&
+          typeof result === "string"
+        ) {
+          activeJobs.current.add(result);
+          if (
+            [
+              "diagnostic",
+              "skill.run",
+              "plan.apply",
+              "plan.reconcile",
+            ].includes(method)
+          ) {
+            const job = await api<Job>("job.read", result);
+            setSelectedJob(job);
+          }
+        }
         await refresh();
-        if (success) setToast({ text: success });
+        if (
+          success &&
+          result !== null &&
+          !(method === "chat" && typeof result !== "string")
+        )
+          setToast({ text: success });
         return result;
       } catch (e) {
         setToast({
@@ -384,8 +453,15 @@ export function App() {
     const target = state?.routers.find((r) => r.id === id);
     if (!target) return;
     if (!target.fingerprint) {
-      const fingerprint = await run("router.probe", id);
-      if (fingerprint) setTrust({ id, fingerprint, action: { method, input, success } });
+      const report = (await run("router.diagnose", id)) as
+        ConnectionReport | undefined;
+      if (report?.needsTrust && report.fingerprint && !report.errorCode)
+        setTrust({
+          id,
+          fingerprint: report.fingerprint,
+          action: { method, input, success },
+        });
+      else if (report) setConnectionReport(report);
       return;
     }
     return run(method, input, success);
@@ -397,12 +473,13 @@ export function App() {
   const connect = async (id = selected) => {
     const r = state?.routers.find((x) => x.id === id);
     if (!r) return;
-    if (r.fingerprint) {
+    const report = (await run("router.diagnose", id)) as
+      ConnectionReport | undefined;
+    if (report?.success) {
       await run("snapshot", id, "Snapshot sedang dikumpulkan.");
-    } else {
-      const fingerprint = await run("router.probe", id);
-      if (fingerprint) setTrust({ id, fingerprint });
-    }
+    } else if (report?.needsTrust && report.fingerprint && !report.errorCode)
+      setTrust({ id, fingerprint: report.fingerprint });
+    else if (report) setConnectionReport(report);
   };
   const sendChat = async (text = chat) => {
     if (!selected || !text.trim()) return;
@@ -611,7 +688,10 @@ export function App() {
                     <Database size={16} />
                     Backup
                   </button>
-                  <button disabled={!router || busy || pending} onClick={() => void checkConnection()}>
+                  <button
+                    disabled={!router || busy || pending}
+                    onClick={() => void checkConnection()}
+                  >
                     <Network size={16} /> Periksa koneksi
                   </button>
                   <button
@@ -651,15 +731,31 @@ export function App() {
               </button>
             </div>
           )}
-          {router && !["routers", "settings", "history"].includes(view) && connection && (
-            <section className={`connection-banner ${connection.error ? "failed" : ""}`} role={connection.error ? "alert" : "status"}>
-              <Network size={18} />
-              <div><strong>{connectionLabels[connection.status]}</strong>
-                <p>{connection.error || (connection.status === "reachable" ? `Identity ${connection.identity || router.name} diverifikasi pada ${date(connection.lastSuccessAt)}.` : "Data perangkat tersedia setelah koneksi SSH dan identity berhasil diverifikasi.")}</p>
-              </div>
-              <button disabled={pending || busy} onClick={() => void checkConnection()}>Detail koneksi</button>
-            </section>
-          )}
+          {router &&
+            !["routers", "settings", "history"].includes(view) &&
+            connection && (
+              <section
+                className={`connection-banner ${connection.error ? "failed" : ""}`}
+                role={connection.error ? "alert" : "status"}
+              >
+                <Network size={18} />
+                <div>
+                  <strong>{connectionLabels[connection.status]}</strong>
+                  <p>
+                    {connection.error ||
+                      (connection.status === "reachable"
+                        ? `Identity ${connection.identity || router.name} diverifikasi pada ${date(connection.lastSuccessAt)}.`
+                        : "Data perangkat tersedia setelah koneksi SSH dan identity berhasil diverifikasi.")}
+                  </p>
+                </div>
+                <button
+                  disabled={pending || busy}
+                  onClick={() => void checkConnection()}
+                >
+                  Detail koneksi
+                </button>
+              </section>
+            )}
           {!router && !["routers", "settings", "skills"].includes(view) ? (
             <Empty
               title="Tambahkan router pertama Anda"
@@ -689,7 +785,11 @@ export function App() {
                 </div>
                 <div className="device-meta">
                   <Badge tone={currentSnapshot ? "good" : "neutral"}>
-                    {currentSnapshot ? "Snapshot live" : "Data live belum tersedia"}
+                    {currentSnapshot
+                      ? "Snapshot live"
+                      : snapshot
+                        ? "Snapshot terakhir · historis"
+                        : "Data live belum tersedia"}
                   </Badge>
                   <small>{date(snapshot?.createdAt)}</small>
                 </div>
@@ -703,8 +803,15 @@ export function App() {
                   Perbarui tiap 60 dtk
                 </label>
               </div>
-              {snapshot && currentSnapshot ? (
+              {snapshot ? (
                 <>
+                  {!currentSnapshot && (
+                    <div className="panel-note">
+                      Data berikut diambil pada {date(snapshot.createdAt)}.
+                      Kondisi router saat ini belum diperbarui. Gunakan
+                      Hubungkan saat jalur LAN/VPN tersedia.
+                    </div>
+                  )}
                   <div className="metrics">
                     <Metric
                       label="BEBAN CPU"
@@ -776,8 +883,8 @@ export function App() {
                             </tr>
                           </thead>
                           <tbody>
-                            {records(snapshot.data.interfaces || "")
-                              .map((r) => (
+                            {records(snapshot.data.interfaces || "").map(
+                              (r) => (
                                 <tr key={r.index}>
                                   <td className="mono">{r.name}</td>
                                   <td>{r.type || "—"}</td>
@@ -799,10 +906,23 @@ export function App() {
                                     </Badge>
                                   </td>
                                   <td>{r["actual-mtu"] || r.mtu || "—"}</td>
-                                  <td className="mono">{rate(snapshot.metrics.interfaceTraffic?.find((t) => t.name === r.name)?.rxBps)}</td>
-                                  <td className="mono">{rate(snapshot.metrics.interfaceTraffic?.find((t) => t.name === r.name)?.txBps)}</td>
+                                  <td className="mono">
+                                    {rate(
+                                      snapshot.metrics.interfaceTraffic?.find(
+                                        (t) => t.name === r.name,
+                                      )?.rxBps,
+                                    )}
+                                  </td>
+                                  <td className="mono">
+                                    {rate(
+                                      snapshot.metrics.interfaceTraffic?.find(
+                                        (t) => t.name === r.name,
+                                      )?.txBps,
+                                    )}
+                                  </td>
                                 </tr>
-                              ))}
+                              ),
+                            )}
                           </tbody>
                         </table>
                         {!records(snapshot.data.interfaces || "").length && (
@@ -896,15 +1016,65 @@ export function App() {
                     />
                   </section>
                   <section className="panel">
-                    <div className="panel-heading"><h2>Perangkat tetangga</h2><small>Hasil discovery RouterOS</small></div>
-                    <div className="table-wrap"><table><thead><tr><th>Identity</th><th>Alamat</th><th>Interface</th><th>Perangkat / versi</th><th></th></tr></thead><tbody>
-                      {detailRows(snapshot.data.neighbors || "").map((n) => <tr key={n.index}>
-                        <td>{n.identity || "—"}</td><td className="mono">{n.address || "—"}</td><td>{n.interface || "—"}</td><td>{n.board || n.platform || "—"}<small>{n.version || ""}</small></td>
-                        <td>{n.address && <button className="compact" onClick={() => setRouterForm({ name: n.identity || n.address, host: n.address, expectedIdentity: n.identity || "" })}>Tambah ke inventory</button>}</td>
-                      </tr>)}
-                    </tbody></table></div>
-                    {!detailRows(snapshot.data.neighbors || "").length && <p className="small-empty">{snapshot.errors.neighbors || "Belum ada perangkat yang dilaporkan discovery RouterOS."}</p>}
-                    <p className="panel-note">Laju RX/TX memakai selisih dua sampel counter. Sampel pertama dan counter yang direset ditampilkan —. Discovery hanya mencakup perangkat yang dilaporkan router ini.</p>
+                    <div className="panel-heading">
+                      <h2>Perangkat tetangga</h2>
+                      <small>Hasil discovery RouterOS</small>
+                    </div>
+                    <div className="table-wrap">
+                      <table>
+                        <thead>
+                          <tr>
+                            <th>Identity</th>
+                            <th>Alamat</th>
+                            <th>Interface</th>
+                            <th>Perangkat / versi</th>
+                            <th></th>
+                          </tr>
+                        </thead>
+                        <tbody>
+                          {detailRows(snapshot.data.neighbors || "").map(
+                            (n) => (
+                              <tr key={n.index}>
+                                <td>{n.identity || "—"}</td>
+                                <td className="mono">{n.address || "—"}</td>
+                                <td>{n.interface || "—"}</td>
+                                <td>
+                                  {n.board || n.platform || "—"}
+                                  <small>{n.version || ""}</small>
+                                </td>
+                                <td>
+                                  {n.address && (
+                                    <button
+                                      className="compact"
+                                      onClick={() =>
+                                        setRouterForm({
+                                          name: n.identity || n.address,
+                                          host: n.address,
+                                          expectedIdentity: n.identity || "",
+                                        })
+                                      }
+                                    >
+                                      Tambah ke inventory
+                                    </button>
+                                  )}
+                                </td>
+                              </tr>
+                            ),
+                          )}
+                        </tbody>
+                      </table>
+                    </div>
+                    {!detailRows(snapshot.data.neighbors || "").length && (
+                      <p className="small-empty">
+                        {snapshot.errors.neighbors ||
+                          "Belum ada perangkat yang dilaporkan discovery RouterOS."}
+                      </p>
+                    )}
+                    <p className="panel-note">
+                      Laju RX/TX memakai selisih dua sampel counter. Sampel
+                      pertama dan counter yang direset ditampilkan —. Discovery
+                      hanya mencakup perangkat yang dilaporkan router ini.
+                    </p>
                   </section>
                   {Object.keys(snapshot.errors).length > 0 && (
                     <div className="notice warn">
@@ -927,7 +1097,9 @@ export function App() {
                     </button>
                   }
                 >
-                  {snapshot ? `Snapshot terakhir diambil ${date(snapshot.createdAt)}. Ambil ulang untuk menampilkan kondisi saat ini.` : "Hubungkan router untuk membaca CPU, memori, interface, HotSpot, dan QoS. Dashboard tidak memuat angka contoh."}
+                  Hubungkan router untuk membaca CPU, memori, interface,
+                  HotSpot, dan QoS. Dashboard menampilkan data setelah perintah
+                  SSH berhasil.
                 </Empty>
               )}
             </>
@@ -992,7 +1164,15 @@ export function App() {
                               {r.fingerprint ? "Dipercaya" : "Perlu verifikasi"}
                             </Badge>
                           </td>
-                          <td>{connectionLabels[state.connections.find((c) => c.routerId === r.id)?.status || "untested"]}</td>
+                          <td>
+                            {
+                              connectionLabels[
+                                state.connections.find(
+                                  (c) => c.routerId === r.id,
+                                )?.status || "untested"
+                              ]
+                            }
+                          </td>
                           <td>
                             {date(
                               state.snapshots.find((s) => s.routerId === r.id)
@@ -1018,7 +1198,13 @@ export function App() {
                               >
                                 Hubungkan
                               </button>
-                              <button className="compact" disabled={pending || busy} onClick={() => void checkConnection(r.id)}>Periksa</button>
+                              <button
+                                className="compact"
+                                disabled={pending || busy}
+                                onClick={() => void checkConnection(r.id)}
+                              >
+                                Periksa
+                              </button>
                               <button
                                 className="icon"
                                 aria-label={`Edit ${r.name}`}
@@ -1166,9 +1352,9 @@ export function App() {
                     </div>
                   </dl>
                   <div className="panel-note">
-                    Mode lokal menjalankan snapshot atau backup sesuai
-                    permintaan. Analisis percakapan dan pembuatan rencana
-                    menggunakan model yang Anda pilih.
+                    Mode lokal memeriksa kondisi, bandwidth, jaringan, HotSpot,
+                    log, dan backup sesuai permintaan. Percakapan bebas memakai
+                    model yang Anda atur di Pengaturan.
                   </div>
                   <button
                     className="text-button padded"
@@ -1483,7 +1669,14 @@ export function App() {
                           <div className="verification" key={i}>
                             <code>{v.command}</code>
                             <small>
-                              Harus memuat: {v.contains.join(" · ")}
+                              {v.row
+                                ? `Tepat satu baris: ${Object.entries(v.row)
+                                    .map(
+                                      ([key, value]) =>
+                                        `${key}=${JSON.stringify(value)}`,
+                                    )
+                                    .join(" · ")}`
+                                : `Harus memuat: ${v.contains.join(" · ")}`}
                             </small>
                           </div>
                         ))}
@@ -1748,17 +1941,88 @@ export function App() {
         />
       )}
       {connectionReport && (
-        <Modal title="Hasil pemeriksaan koneksi" wide onClose={() => setConnectionReport(null)}>
-          <p><strong>{connectionReport.endpoint}</strong> · {date(connectionReport.checkedAt)}</p>
-          <p className="muted">Alamat IPv4 komputer: {connectionReport.localAddresses.join(", ") || "Tidak ada alamat IPv4 aktif"}</p>
-          <div className="connection-steps">{connectionReport.steps.map((step, i) => <div key={i}>
-            <Badge tone={step.state === "pass" ? "good" : step.state === "failed" ? "bad" : "neutral"}>{step.state === "pass" ? "Berhasil" : step.state === "failed" ? "Gagal" : "Belum dijalankan"}</Badge>
-            <section><strong>{step.label}</strong><p>{step.detail}</p>{step.durationMs !== undefined && <small>{step.durationMs} ms</small>}</section>
-          </div>)}</div>
+        <Modal
+          title="Hasil pemeriksaan koneksi"
+          wide
+          onClose={() => setConnectionReport(null)}
+        >
+          <p>
+            <strong>{connectionReport.endpoint}</strong> ·{" "}
+            {date(connectionReport.checkedAt)}
+          </p>
+          <p className="muted">
+            Alamat IPv4 komputer:{" "}
+            {connectionReport.localAddresses.join(", ") ||
+              "Tidak ada alamat IPv4 aktif"}
+          </p>
+          <div className="connection-steps">
+            {connectionReport.steps.map((step, i) => (
+              <div key={i}>
+                <Badge
+                  tone={
+                    step.state === "pass"
+                      ? "good"
+                      : step.state === "failed"
+                        ? "bad"
+                        : "neutral"
+                  }
+                >
+                  {step.state === "pass"
+                    ? "Berhasil"
+                    : step.state === "failed"
+                      ? "Gagal"
+                      : "Belum dijalankan"}
+                </Badge>
+                <section>
+                  <strong>{step.label}</strong>
+                  <p>{step.detail}</p>
+                  {step.durationMs !== undefined && (
+                    <small>{step.durationMs} ms</small>
+                  )}
+                </section>
+              </div>
+            ))}
+          </div>
           <div className="modal-actions">
-            <button onClick={() => { const r = state.routers.find((r) => r.id === connectionReport.routerId); setConnectionReport(null); if (r) setRouterForm(r); }}>Edit koneksi</button>
-            {connectionReport.needsTrust && connectionReport.fingerprint && <button className="primary" onClick={() => { setTrust({ id: connectionReport.routerId, fingerprint: connectionReport.fingerprint! }); setConnectionReport(null); }}>Verifikasi host key</button>}
-            {connectionReport.success && <button className="primary" disabled={pending || busy} onClick={() => { const id = connectionReport.routerId; setConnectionReport(null); void run("snapshot", id, "Mengambil data live router."); }}>Ambil data live</button>}
+            <button
+              onClick={() => {
+                const r = state.routers.find(
+                  (r) => r.id === connectionReport.routerId,
+                );
+                setConnectionReport(null);
+                if (r) setRouterForm(r);
+              }}
+            >
+              Edit koneksi
+            </button>
+            {connectionReport.needsTrust && connectionReport.fingerprint && (
+              <button
+                className="primary"
+                onClick={() => {
+                  setTrust({
+                    id: connectionReport.routerId,
+                    fingerprint: connectionReport.fingerprint!,
+                    connectAfterTrust: !connectionReport.errorCode,
+                  });
+                  setConnectionReport(null);
+                }}
+              >
+                Verifikasi host key
+              </button>
+            )}
+            {connectionReport.success && (
+              <button
+                className="primary"
+                disabled={pending || busy}
+                onClick={() => {
+                  const id = connectionReport.routerId;
+                  setConnectionReport(null);
+                  void run("snapshot", id, "Mengambil data live router.");
+                }}
+              >
+                Ambil data live
+              </button>
+            )}
             <button onClick={() => setConnectionReport(null)}>Tutup</button>
           </div>
         </Modal>
@@ -1788,10 +2052,27 @@ export function App() {
                 setPending(true);
                 try {
                   const action = trust.action;
-                  await api("router.trust", { id: trust.id, fingerprint: trust.fingerprint });
+                  await api("router.trust", {
+                    id: trust.id,
+                    fingerprint: trust.fingerprint,
+                  });
                   setTrust(null);
                   await refresh();
-                  await run(action?.method || "snapshot", action?.input ?? id, action?.success || "Koneksi dipercaya. Mengambil data router.");
+                  if (trust.connectAfterTrust === false) {
+                    setToast({
+                      text: "Host key tersimpan. Perbaiki credential di Edit koneksi sebelum menghubungkan.",
+                    });
+                  } else {
+                    const report = (await run("router.diagnose", id)) as
+                      ConnectionReport | undefined;
+                    if (report?.success)
+                      await run(
+                        action?.method || "snapshot",
+                        action?.input ?? id,
+                        action?.success || "Mengambil data router.",
+                      );
+                    else if (report) setConnectionReport(report);
+                  }
                 } catch (e) {
                   setToast({ text: String(e), bad: true });
                 } finally {
@@ -1800,7 +2081,9 @@ export function App() {
               }}
             >
               <ShieldCheck size={16} />
-              Percayai & hubungkan
+              {trust.connectAfterTrust === false
+                ? "Percayai host key"
+                : "Percayai & hubungkan"}
             </button>
           </div>
         </Modal>
@@ -1817,8 +2100,12 @@ export function App() {
             <button
               className="danger"
               onClick={async () => {
-                await run("router.delete", remove.id, "Koneksi dihapus.");
-                setRemove(null);
+                const deleted = await run(
+                  "router.delete",
+                  remove.id,
+                  "Koneksi dihapus.",
+                );
+                if (deleted) setRemove(null);
               }}
             >
               Hapus koneksi
@@ -1973,6 +2260,12 @@ function RouterForm({
   });
   const [secret, setSecret] = useState("");
   const [persist, setPersist] = useState(false);
+  const [formError, setFormError] = useState("");
+  const credentialAvailable =
+    !!router.hasSecret &&
+    ["host", "port", "user", "auth", "keyPath"].every(
+      (key) => (router as any)[key] === (r as any)[key],
+    );
   const field = (key: keyof Router, value: unknown) =>
     setR((x) => ({ ...x, [key]: value }));
   return (
@@ -2053,8 +2346,13 @@ function RouterForm({
               <button
                 type="button"
                 onClick={async () => {
-                  const path = await api("dialog.key");
-                  if (path) field("keyPath", path);
+                  try {
+                    const path = await api("dialog.key");
+                    if (path) field("keyPath", path);
+                    setFormError("");
+                  } catch (e) {
+                    setFormError(e instanceof Error ? e.message : String(e));
+                  }
                 }}
               >
                 <FolderOpen size={16} />
@@ -2068,13 +2366,14 @@ function RouterForm({
             r.auth === "key" ? "Passphrase key (jika ada)" : "Password RouterOS"
           }
           hint={
-            router.hasSecret
+            credentialAvailable
               ? "Credential sudah tersedia. Kosongkan untuk mempertahankannya."
               : "Credential dapat dipakai hanya selama sesi aplikasi ini."
           }
         >
           <input
             type="password"
+            required={r.auth === "password" && !credentialAvailable}
             autoComplete="new-password"
             value={secret}
             onChange={(e) => setSecret(e.target.value)}
@@ -2115,6 +2414,7 @@ function RouterForm({
             onChange={(e) => field("notes", e.target.value)}
           />
         </Field>
+        {formError && <p className="notice warn">{formError}</p>}
         <div className="modal-actions">
           <button type="button" onClick={onClose}>
             Batal
@@ -2138,8 +2438,8 @@ function RateForm({
   disabled: boolean;
 }) {
   const [profile, setProfile] = useState("");
-  const [up, setUp] = useState("2M");
-  const [down, setDown] = useState("8M");
+  const [up, setUp] = useState("");
+  const [down, setDown] = useState("");
   return (
     <form
       className="rate-form"
@@ -2163,11 +2463,17 @@ function RateForm({
         </datalist>
       </Field>
       <Field label="Upload">
-        <input required value={up} onChange={(e) => setUp(e.target.value)} />
+        <input
+          required
+          placeholder="Contoh: 2M"
+          value={up}
+          onChange={(e) => setUp(e.target.value)}
+        />
       </Field>
       <Field label="Download">
         <input
           required
+          placeholder="Contoh: 8M"
           value={down}
           onChange={(e) => setDown(e.target.value)}
         />
@@ -2195,12 +2501,8 @@ function PlanForm({
   const [apply, setApply] = useState("");
   const [rollback, setRollback] = useState("");
   const [preconditions, setPreconditions] = useState("[]");
-  const [verify, setVerify] = useState(
-    '[\n  {"command": "/queue tree print detail", "contains": ["AGENT-TAG"]}\n]',
-  );
-  const [rollbackVerify, setRollbackVerify] = useState(
-    '[\n  {"command": "/system identity print", "contains": ["GANTI-DENGAN-TARGET-ROLLBACK"]}\n]',
-  );
+  const [verify, setVerify] = useState("[]");
+  const [rollbackVerify, setRollbackVerify] = useState("[]");
   const [error, setError] = useState("");
   return (
     <Modal wide title="Rencana perubahan manual" onClose={onClose}>
@@ -2415,7 +2717,10 @@ function SettingsPage({
   const [s, setS] = useState(settings);
   const [key, setKey] = useState("");
   const [persist, setPersist] = useState(false);
-  const checked = modelCheck?.endpoint === s.aiBaseUrl && modelCheck.model === s.aiModel ? modelCheck : undefined;
+  const checked =
+    modelCheck?.endpoint === s.aiBaseUrl && modelCheck.model === s.aiModel
+      ? modelCheck
+      : undefined;
   return (
     <div className="settings-grid">
       <section className="panel">
@@ -2427,7 +2732,11 @@ function SettingsPage({
             </small>
           </div>
           <Badge tone={s.aiEnabled && checked?.success ? "good" : "neutral"}>
-            {s.aiEnabled ? checked?.success ? "Endpoint terverifikasi" : "Endpoint belum terverifikasi" : "Workflow lokal"}
+            {s.aiEnabled
+              ? checked?.success
+                ? "Endpoint terverifikasi"
+                : "Endpoint belum terverifikasi"
+              : "Workflow lokal"}
           </Badge>
         </div>
         <form
@@ -2438,7 +2747,9 @@ function SettingsPage({
               "settings.save",
               { settings: s, apiKey: key || undefined, persist },
               "Pengaturan disimpan.",
-            ).then(() => setKey(""));
+            ).then((saved) => {
+              if (saved) setKey("");
+            });
           }}
         >
           <label className="inline-check">
@@ -2468,7 +2779,11 @@ function SettingsPage({
               onChange={(e) => setS({ ...s, aiModel: e.target.value })}
             />
           </Field>
-          <datalist id="available-models">{modelCheck?.availableModels.map((id) => <option key={id} value={id} />)}</datalist>
+          <datalist id="available-models">
+            {modelCheck?.availableModels.map((id) => (
+              <option key={id} value={id} />
+            ))}
+          </datalist>
           <Field
             label="API key (jika diperlukan)"
             hint={
@@ -2507,10 +2822,32 @@ function SettingsPage({
             hanya mendapat tool diagnostik serta pembuatan rencana. Persetujuan
             apply tetap dilakukan di aplikasi.
           </p>
-          {checked && <div className={`notice ${checked.success ? "" : "error"}`}>{checked.success ? `Endpoint dan model tersedia. Diperiksa ${date(checked.checkedAt)}. Kemampuan tool calling diperiksa saat agent digunakan.` : checked.error}</div>}
-          {modelCheck?.availableModels.length ? <p className="muted">Model tersedia: {modelCheck.availableModels.join(", ")}</p> : null}
+          {checked && (
+            <div className={`notice ${checked.success ? "" : "error"}`}>
+              {checked.success
+                ? `Endpoint dan model tersedia. Diperiksa ${date(checked.checkedAt)}. Kemampuan tool calling diperiksa saat agent digunakan.`
+                : checked.error}
+            </div>
+          )}
+          {modelCheck?.availableModels.length ? (
+            <p className="muted">
+              Model tersedia: {modelCheck.availableModels.join(", ")}
+            </p>
+          ) : null}
           <div className="row">
-            <button type="button" disabled={pending} onClick={() => void run("model.check", { settings: s, apiKey: key || undefined })}><Network size={16} />Periksa endpoint</button>
+            <button
+              type="button"
+              disabled={pending}
+              onClick={() =>
+                void run("model.check", {
+                  settings: s,
+                  apiKey: key || undefined,
+                })
+              }
+            >
+              <Network size={16} />
+              Periksa endpoint
+            </button>
             <button className="primary" disabled={pending}>
               <Check size={16} />
               Simpan pengaturan
@@ -2553,9 +2890,9 @@ function SettingsPage({
           </div>
           <div className="padded">
             <p>
-              Impor routers.json dan skill pack. Data dashboard diambil melalui koneksi aplikasi ini.
-              Pilih ulang lokasi SSH key jika Anda pindah komputer atau sistem
-              operasi.
+              Impor routers.json dan skill pack. Data dashboard diambil melalui
+              koneksi aplikasi ini. Pilih ulang lokasi SSH key jika Anda pindah
+              komputer atau sistem operasi.
             </p>
             <button
               onClick={() =>

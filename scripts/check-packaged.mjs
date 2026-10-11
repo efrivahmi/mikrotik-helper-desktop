@@ -1,5 +1,6 @@
 import { _electron as electron } from "playwright";
 import { resolve } from "node:path";
+import { readFileSync } from "node:fs";
 import assert from "node:assert/strict";
 const executable = process.argv[2];
 if (!executable)
@@ -20,7 +21,10 @@ try {
     "function",
   );
   const state = await page.evaluate(() => window.helper.invoke("state"));
-  assert.equal(state.version, "1.1.0");
+  const expectedVersion = JSON.parse(
+    readFileSync(new URL("../package.json", import.meta.url), "utf8"),
+  ).version;
+  assert.equal(state.version, expectedVersion);
   assert.equal(state.skills.length >= 4, true);
   assert.deepEqual(errors, []);
   console.log(

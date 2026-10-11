@@ -9,9 +9,10 @@ import { join, basename } from "node:path";
 import { createHash, randomUUID } from "node:crypto";
 import { Store } from "./store";
 import { Session, probe, ConnectionError, connectionError } from "./transport";
-import { trafficSamples } from "../shared/routeros";
+import { detailRows, trafficSamples } from "../shared/routeros";
 import { inspectConnection } from "./connections";
 import { inspectModel, modelEndpoint, boundedJson } from "./model-client";
+import { localWorkflow, workflowKeys, workflowReport } from "./workflows";
 import {
   readCommand,
   redact,
@@ -59,6 +60,7 @@ export class Engine {
     public store: Store,
     public vault: Vault,
     skillsDir: string,
+    private version = "development",
   ) {
     store.removeImportedSnapshots();
     for (const file of readdirSync(skillsDir).filter((f) =>
@@ -110,15 +112,13 @@ export class Engine {
       routers: this.store
         .all<Router>("router")
         .map((r) => ({ ...r, hasSecret: this.vault.has(r.id) })),
-      connections: this.store
-        .all<Router>("router")
-        .map(
-          (r) =>
-            this.connections.get(r.id) || {
-              routerId: r.id,
-              status: "untested",
-            },
-        ),
+      connections: this.store.all<Router>("router").map(
+        (r) =>
+          this.connections.get(r.id) || {
+            routerId: r.id,
+            status: "untested",
+          },
+      ),
       connectionReports:
         this.store.latestByRouter<ConnectionReport>("connection-report"),
       modelCheck: this.store.get<ModelCheck>("model-check", "main"),
@@ -134,7 +134,7 @@ export class Engine {
       messages: this.store.recent<Message>("message", 250).reverse(),
       settings: this.store.settings(),
       dataDir: this.store.dir,
-      version: "1.1.0",
+      version: this.version,
       secureStorage: this.vault.available(),
       hasAiKey: this.vault.has("ai"),
     };
@@ -147,6 +147,19 @@ export class Engine {
         "Tunggu pekerjaan router ini selesai sebelum mengubah koneksi.",
       );
     const old = this.store.get<Router>("router", id);
+    const credentialMatches =
+      !!old &&
+      ["host", "port", "user", "auth", "keyPath"].every(
+        (key) => (old as any)[key] === (parsed as any)[key],
+      );
+    if (
+      parsed.auth === "password" &&
+      !password &&
+      !(credentialMatches && this.vault.has(id))
+    )
+      throw new Error(
+        "Isi password untuk koneksi ini. Credential koneksi sebelumnya tidak dipakai pada target atau metode autentikasi yang berbeda.",
+      );
     this.pendingFingerprints.delete(id);
     this.connections.delete(id);
     if (
@@ -166,6 +179,7 @@ export class Engine {
         : undefined;
     if (password !== undefined && password !== "")
       this.vault.set(id, password, persist);
+    else if (!credentialMatches) this.vault.delete(id);
     const router = { ...parsed, id, fingerprint };
     this.store.put("router", id, router);
     this.store.audit(id, "router.save", `Inventory ${router.name} disimpan.`);
@@ -201,7 +215,7 @@ export class Engine {
           ? "host-key-changed"
           : error.code === "IDENTITY_MISMATCH"
             ? "identity-mismatch"
-            : /^(AUTH_|KEY_)/.test(error.code)
+            : /^(AUTH_|KEY_|VAULT_)/.test(error.code)
               ? "auth-failed"
               : "unreachable";
     this.connection(id, {
@@ -247,12 +261,25 @@ export class Engine {
       code: undefined,
     });
     try {
+      let secret: string | undefined;
+      let credentialError: ConnectionError | undefined;
+      try {
+        secret = this.vault.get(id);
+      } catch {
+        credentialError = new ConnectionError(
+          "VAULT_LOCKED",
+          "Penyimpanan credential OS terkunci. Isi credential untuk sesi ini melalui Edit koneksi.",
+        );
+      }
       const report = await inspectConnection(
         router,
-        this.vault.get(id),
+        secret,
         (session) => this.checkIdentity(router, session),
+        credentialError,
       );
       this.store.put("connection-report", report.id, report);
+      if (report.needsTrust && report.fingerprint)
+        this.pendingFingerprints.set(id, report.fingerprint);
       if (report.success)
         this.connection(id, {
           status: "reachable",
@@ -262,7 +289,6 @@ export class Engine {
           code: undefined,
         });
       else if (report.needsTrust && !report.errorCode) {
-        this.pendingFingerprints.set(id, report.fingerprint!);
         this.connection(id, { status: "trust-required" });
       } else {
         const detail =
@@ -750,10 +776,16 @@ export class Engine {
       throw new Error(
         "Ambil snapshot live dalam 30 menit terakhir untuk membaca nilai profile sebelumnya.",
       );
-    const blocks = snapshot.data["hotspot-user-profile"].split(/(?=\bname=")/);
-    const block = blocks.find((b) => b.startsWith(`name="${profile}"`));
-    if (!block) throw new Error("Profile tidak ditemukan pada snapshot.");
-    const previous = block.match(/rate-limit="([^"]*)"/)?.[1] || "";
+    const rows = detailRows(snapshot.data["hotspot-user-profile"]).filter(
+      (row) => row.name === profile,
+    );
+    if (rows.length !== 1)
+      throw new Error("Profile harus ditemukan tepat satu kali pada snapshot.");
+    if (!Object.hasOwn(rows[0], "rate-limit"))
+      throw new Error(
+        "Nilai rate-limit lama tidak terbaca. Ambil snapshot ulang atau gunakan rencana manual.",
+      );
+    const previous = rows[0]["rate-limit"];
     if (!/^[\d.kMG /]*$/.test(previous))
       throw new Error("Format rate-limit lama membutuhkan rencana manual.");
     const next = `${upload}/${download}`,
@@ -764,11 +796,8 @@ export class Engine {
       );
     const initial = {
       command: `/ip hotspot user profile print detail where name="${profile}"`,
-      contains: [
-        `name="${profile}"`,
-        ...(previous ? [`rate-limit="${previous}"`] : []),
-      ],
-      notContains: previous ? [] : ["rate-limit="],
+      contains: [],
+      row: { name: profile, "rate-limit": previous },
     };
     return this.prepare({
       routerId: id,
@@ -779,7 +808,8 @@ export class Engine {
       verify: [
         {
           command: `/ip hotspot user profile print detail where name="${profile}"`,
-          contains: [`name="${profile}"`, `rate-limit="${next}"`],
+          contains: [],
+          row: { name: profile, "rate-limit": next },
         },
       ],
       rollbackVerify: [initial],
@@ -839,7 +869,41 @@ export class Engine {
   chat(id: string, text: string) {
     if (!text.trim() || text.length > 12000)
       throw new Error("Pesan harus berisi 1–12.000 karakter.");
+    this.store.router(id);
+    if (text.trim().startsWith("/") && !this.store.settings().aiEnabled)
+      readCommand(text);
     this.message(id, "user", text);
+    const workflow = localWorkflow(text);
+    if (
+      !this.store.settings().aiEnabled &&
+      !workflow &&
+      !text.trim().startsWith("/")
+    ) {
+      this.message(
+        id,
+        "assistant",
+        "Workflow lokal menerima pemeriksaan kondisi, bandwidth, jaringan/AP/switch, HotSpot, log, backup, atau satu perintah print dari katalog Diagnostik. Untuk permintaan konfigurasi, buka Perubahan dan siapkan rencana apply/rollback. Percakapan bebas memerlukan model di Pengaturan. Permintaan ini belum menjalankan pekerjaan router.",
+      );
+      const idJob = randomUUID();
+      const at = new Date().toISOString();
+      this.store.put<Job>("job", idJob, {
+        id: idJob,
+        routerId: id,
+        title: "Panduan workflow lokal",
+        state: "done",
+        startedAt: at,
+        endedAt: at,
+        steps: [
+          "Panduan ditampilkan di Agent. Tidak ada sambungan atau perintah ke router.",
+        ],
+      });
+      this.store.audit(
+        id,
+        "agent.help",
+        "Permintaan di luar workflow lokal; panduan ditampilkan.",
+      );
+      return idJob;
+    }
     return this.start(id, "Agent", async (session, step) => {
       const settings = this.store.settings();
       if (settings.aiEnabled) {
@@ -856,7 +920,7 @@ export class Engine {
         }
         return;
       }
-      if (/\bbackup\b/i.test(text)) {
+      if (workflow === "backup") {
         const backup = await this.backupWithin(id, session, step);
         this.message(
           id,
@@ -865,14 +929,33 @@ export class Engine {
         );
         return;
       }
-      const snapshot = await this.collect(id, session, step);
-      const m = snapshot.metrics;
-      const hasPcq = /pcq/.test(snapshot.data["queue-tree"] || "");
-      this.message(
+      if (text.trim().startsWith("/")) {
+        const command = readCommand(text);
+        step(command);
+        const output = redact(await session.exec(command));
+        this.store.put("evidence", randomUUID(), {
+          routerId: id,
+          command,
+          output,
+          createdAt: new Date().toISOString(),
+        });
+        step(output || "(Tidak ada baris hasil)");
+        this.message(
+          id,
+          "assistant",
+          `${command}\n\n${output || "(Tidak ada baris hasil)"}`,
+        );
+        return;
+      }
+      const selected = workflow || "snapshot";
+      step(`Workflow lokal: ${selected}.`);
+      const snapshot = await this.collect(
         id,
-        "assistant",
-        `Pemeriksaan live selesai pada ${new Date(snapshot.createdAt).toLocaleString("id-ID")}.\n\n${m.identity} · RouterOS ${m.version}\nCPU ${m.cpu}% · memori bebas ${m.freeMemory} / ${m.totalMemory}\nHotSpot aktif: ${m.activeUsers ?? "tidak tersedia"} · simple queue: ${m.simpleQueues ?? "tidak tersedia"}\n\n${hasPcq ? "Queue Tree menggunakan PCQ. Cakupan pembagian perlu dicocokkan dengan subnet mangle dan classifier queue type." : "Belum ada bukti PCQ pada Queue Tree yang dibaca."} Counter drop merupakan nilai kumulatif, bukan laju kehilangan paket saat ini.\n\n${Object.keys(snapshot.errors).length ? "Ada data yang tidak terbaca; periksa evidence." : "Evidence tersedia di Ringkasan dan Diagnostik."}\n\nMode workflow lokal aktif. Untuk dialog analisis bebas dan penyusunan rencana lewat bahasa alami, hubungkan model pada Pengaturan. Perubahan dapat disiapkan lewat halaman Perubahan.`,
+        session,
+        step,
+        workflowKeys(selected),
       );
+      this.message(id, "assistant", workflowReport(selected, snapshot));
     });
   }
   async modelChat(id: string, session: Session, step: Step) {

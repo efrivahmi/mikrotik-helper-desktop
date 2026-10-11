@@ -7,11 +7,17 @@ Source aplikasi desktop dan helper Python disimpan dalam dua repository private:
 
 Repository menyimpan source, dokumentasi, skill, dan konfigurasi build. File inventory pribadi, credential, private key, database aplikasi, backup, snapshot, dan hasil operasi router dikecualikan dari riwayat source Git dan disertakan dalam arsip lengkap Release private. Installer dan dependensi dapat dibangun kembali dari source; direktori `release/`, `dist/`, dan `node_modules/` diabaikan Git.
 
-## Status source saat commit awal
+## Status source saat commit awal, 10 Oktober 2026
 
-Paket 1.0.0 pernah dibangun pada 5 Oktober 2026. Source saat ini memakai versi 1.1.0 dan memuat pekerjaan lanjutan untuk menghapus data contoh/impor dari dashboard, pemeriksaan koneksi SSH bertahap, pengambilan counter interface dan discovery tetangga, serta pemeriksaan endpoint model.
+Paket 1.0.0 pernah dibangun pada 5 Oktober 2026. Source pada commit awal memakai versi 1.1.0 dan memuat pekerjaan lanjutan untuk menghapus data contoh/impor dari dashboard, pemeriksaan koneksi SSH bertahap, pengambilan counter interface dan discovery tetangga, serta pemeriksaan endpoint model.
 
-Pekerjaan 1.1.0 belum diselesaikan sebagai rilis produksi. Laporan validasi 1.0.0 adalah catatan pengujian pada saat itu; laporan tersebut tidak membuktikan seluruh perubahan 1.1.0 sudah teruji. Paket yang berada di komputer asal dapat berbeda dari source terbaru. Pembuatan repo tidak menjalankan perubahan konfigurasi pada router.
+Saat commit awal, pekerjaan 1.1.0 belum diselesaikan sebagai rilis produksi. Laporan validasi 1.0.0 adalah catatan pengujian pada saat itu; laporan tersebut tidak membuktikan seluruh perubahan 1.1.0 sudah teruji. Paket yang berada di komputer asal dapat berbeda dari source terbaru. Pembuatan repo tidak menjalankan perubahan konfigurasi pada router.
+
+## Perbaikan desktop, 11 Oktober 2026
+
+Source dan paket lokal diperbarui ke 1.1.1. Shortcut kini mengarah ke paket baru. Pembacaan versi memakai metadata aplikasi yang berjalan, dan pemasangan shortcut menolak paket yang masih versi lama. SSH, hasil pekerjaan, pengaturan, workflow lokal, dan generator HotSpot diperbaiki. Lihat [catatan perbaikan](REPAIR-20261011.md).
+
+Build tidak membuktikan koneksi router produksi. Pemilik sedang di luar jaringan Invada; autentikasi dan operasi nyata menunggu jalur LAN/VPN. Pengujian otomatis tidak dijalankan pada sesi perbaikan ini.
 
 ## GitHub Actions
 

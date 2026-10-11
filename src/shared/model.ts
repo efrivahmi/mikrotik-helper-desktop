@@ -21,11 +21,20 @@ export type Router = z.infer<typeof RouterSchema> & {
   fingerprint?: string;
   hasSecret?: boolean;
 };
-export const VerificationSchema = z.object({
-  command: z.string().max(1000),
-  contains: z.array(z.string().min(1).max(200)).min(1).max(10),
-  notContains: z.array(z.string().min(1).max(200)).max(10).default([]),
-});
+export const VerificationSchema = z
+  .object({
+    command: z.string().max(1000),
+    contains: z.array(z.string().min(1).max(200)).max(10),
+    notContains: z.array(z.string().min(1).max(200)).max(10).default([]),
+    row: z.record(z.string().regex(/^[\w-]+$/), z.string().max(200)).optional(),
+  })
+  .refine(
+    (v) => v.contains.length > 0 || (v.row && Object.keys(v.row).length > 0),
+    {
+      message:
+        "Verifikasi membutuhkan teks target atau nilai properti baris RouterOS.",
+    },
+  );
 export const PlanInputSchema = z.object({
   routerId: z.string().uuid(),
   title: z.string().trim().min(3).max(120),

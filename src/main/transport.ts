@@ -1,4 +1,4 @@
-import { Client, type ConnectConfig } from "ssh2";
+import { Client, utils, type ConnectConfig } from "ssh2";
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
@@ -104,6 +104,18 @@ function config(router: Router, secret?: string): ConnectConfig {
     result.privateKey = readFileSync(
       router.keyPath.replace(/^~(?=\/|\\)/, homedir()),
     );
+    const parsed = utils.parseKey(result.privateKey, secret);
+    if (parsed instanceof Error)
+      throw new ConnectionError(
+        "KEY_INVALID",
+        "Private key tidak dapat dibuka. Pilih private key OpenSSH/PEM dan isi passphrase jika key terenkripsi.",
+      );
+    const key = Array.isArray(parsed) ? parsed[0] : parsed;
+    if (!key || !key.isPrivateKey())
+      throw new ConnectionError(
+        "KEY_INVALID",
+        "File yang dipilih adalah public key. Pilih private key pasangannya (bukan file .pub).",
+      );
     if (secret) result.passphrase = secret;
   } else {
     if (!secret)
@@ -215,22 +227,37 @@ export class Session {
       let settled = false;
       const timer = setTimeout(() => {
         if (!settled) {
-          settled = true;
-          this.conn.end();
-          reject(
+          fail(
             new Error(
               "TIMEOUT: hasil perintah belum diketahui; periksa state sebelum mencoba ulang.",
             ),
           );
+          this.conn.destroy();
         }
       }, timeout);
+      const disconnected = () =>
+        fail(
+          new ConnectionError(
+            "SSH_DISCONNECTED",
+            "Sambungan SSH terputus saat perintah berjalan; hasil belum diketahui. Periksa jaringan dan state router sebelum mengulang.",
+          ),
+        );
+      const cleanup = () => {
+        clearTimeout(timer);
+        this.conn.off("error", disconnected);
+        this.conn.off("end", disconnected);
+        this.conn.off("close", disconnected);
+      };
       const fail = (error: Error) => {
         if (!settled) {
           settled = true;
-          clearTimeout(timer);
+          cleanup();
           reject(error);
         }
       };
+      this.conn.once("error", disconnected);
+      this.conn.once("end", disconnected);
+      this.conn.once("close", disconnected);
       this.conn.exec(command, (error, stream) => {
         if (error) {
           fail(error);
@@ -251,7 +278,7 @@ export class Session {
         stream.on("close", (code: number | null) => {
           if (settled) return;
           settled = true;
-          clearTimeout(timer);
+          cleanup();
           if (
             (code !== null && code !== undefined && code !== 0) ||
             remoteError(output)

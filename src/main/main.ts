@@ -106,6 +106,7 @@ async function create() {
     app.isPackaged
       ? join(process.resourcesPath, "skills")
       : join(app.getAppPath(), "resources/skills"),
+    app.getVersion(),
   );
   handle("state", (p) =>
     engine.state(p === undefined ? undefined : uuid.parse(p)),
@@ -125,7 +126,10 @@ async function create() {
       .parse(p);
     return engine.saveRouter(input.router, input.secret, input.persist);
   });
-  handle("router.delete", (p) => engine.deleteRouter(uuid.parse(p)));
+  handle("router.delete", (p) => {
+    engine.deleteRouter(uuid.parse(p));
+    return true;
+  });
   handle("router.probe", (p) => engine.probe(uuid.parse(p)));
   handle("router.diagnose", (p) => engine.diagnoseConnection(uuid.parse(p)));
   handle("model.check", (p) => {
@@ -211,6 +215,7 @@ async function create() {
     if (v.apiKey) vault.set("ai", v.apiKey, v.persist);
     store.put("settings", "main", v.settings);
     store.audit("", "settings.save", "Pengaturan agent disimpan.");
+    return v.settings;
   });
   handle("secret.clear", (p) => {
     const id = z.string().parse(p);
@@ -253,7 +258,11 @@ async function create() {
     if (content.length > 100000) throw new Error("Script terlalu besar.");
     return content;
   });
-  handle("data.open", () => shell.openPath(store.dir));
+  handle("data.open", async () => {
+    const error = await shell.openPath(store.dir);
+    if (error) throw new Error(error);
+    return true;
+  });
   handle("backup.reveal", (p) => {
     const record = store.get<{ path: string }>("backup", uuid.parse(p));
     if (!record) throw new Error("Backup tidak ditemukan.");
@@ -276,6 +285,10 @@ async function create() {
         .all<Snapshot>("snapshot")
         .filter((s) => s.routerId === id),
       jobs: store.all<Job>("job").filter((j) => j.routerId === id),
+      connectionReports: store
+        .all("connection-report")
+        .filter((r: any) => r.routerId === id),
+      evidence: store.all("evidence").filter((r: any) => r.routerId === id),
       audit: state.audit.filter((a) => a.routerId === id),
     };
     writeFileSync(result.filePath, JSON.stringify(report, null, 2), {

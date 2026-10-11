@@ -2,11 +2,11 @@
 
 Aplikasi desktop untuk mengelola banyak router melalui alur helper yang sudah Anda rancang: koneksi, evidence, backup, rencana, review, persetujuan, apply, verifikasi, dan rollback. UI menggunakan navigasi konsol administrasi, tabel perangkat, editor script, serta riwayat pekerjaan dalam Bahasa Indonesia.
 
-Versi 1.0.0 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
+Versi 1.1.1 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
 
 ## Mulai menggunakan
 
-1. Jalankan `MikroTik-Helper-Setup-1.0.0-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.0.0-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
+1. Jalankan `MikroTik-Helper-Setup-1.1.1-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.1.1-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
 2. Buka **Router → Impor helper lama** dan pilih direktori `mikrotik-helper-agent`. Inventory dan skill JSON akan diimpor. Dashboard membaca data melalui koneksi aplikasi ini. Backup dan riwayat lama tetap berada di workspace asal.
 3. Periksa IP, port SSH, username, expected identity, dan lokasi private key. Saat berpindah ke Windows, pilih kembali file key yang tersedia di komputer Windows.
 4. Pilih **Hubungkan**, bandingkan fingerprint host key dengan perangkat melalui jalur yang dipercaya, lalu setujui. Setelah itu aplikasi mengambil snapshot.
@@ -18,26 +18,28 @@ Versi 1.0.0 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Li
 Buka shortcut **MikroTik Helper** di Desktop atau menu aplikasi pada komputer ini. Alternatifnya, jalankan AppImage dari `release/`:
 
 ```bash
-chmod +x release/MikroTik-Helper-1.0.0-x86_64.AppImage
-./release/MikroTik-Helper-1.0.0-x86_64.AppImage
+chmod +x release/MikroTik-Helper-1.1.1-x86_64.AppImage
+./release/MikroTik-Helper-1.1.1-x86_64.AppImage
 ```
 
 Jika AppImage tidak dapat berjalan karena FUSE belum tersedia, jalankan dengan opsi `--appimage-extract-and-run`. Untuk memasang ulang shortcut setelah memindahkan project atau melakukan build baru, jalankan `node scripts/install-local.mjs`.
 
 Data contoh dan screenshot demonstrasi sudah dihapus dari workspace aplikasi. Dashboard menampilkan metrik setelah snapshot live berhasil diambil. Lihat [status source dan penyimpanan GitHub](docs/GITHUB.md).
 
+Jika komputer berada di luar jaringan router, gunakan VPN management atau hubungkan kembali di lokasi. Menu Router → Periksa memperlihatkan tahap credential, alamat, port, host key, dan autentikasi. Tidak adanya jalur ke IP privat bukan kegagalan password.
+
 ## Kemampuan yang tersedia
 
-| Bagian     | Fungsi                                                                                           |
-| ---------- | ------------------------------------------------------------------------------------------------ |
-| Router     | Tambah/edit/hapus inventory, lokasi, SSH key/password, pinning host key, pengecekan identity     |
-| Ringkasan  | CPU, memori, uptime, versi, user HotSpot, queue, interface, grafik sampel CPU                    |
-| Diagnostik | Katalog `print` read-only, evidence mentah, hasil perintah dan pekerjaan                         |
-| Skill      | Skill JSON lama dan skill bandwidth/VPN tambahan; editor, validasi, impor, eksekusi              |
-| Agent      | Workflow lokal untuk snapshot/backup; model pilihan untuk percakapan, diagnostik, dan proposal   |
-| Perubahan  | Apply/rollback `.rsc`, preconditions, verifikasi target, checksum, backup wajib, grant eksplisit |
-| Pemulihan  | Hasil import tidak pasti diberi status `unknown`; pemeriksaan ulang atau rollback terarah        |
-| Arsip      | Backup export tersamarkan, laporan JSON, audit lokal, riwayat pekerjaan                          |
+| Bagian     | Fungsi                                                                                                                                |
+| ---------- | ------------------------------------------------------------------------------------------------------------------------------------- |
+| Router     | Tambah/edit/hapus inventory, lokasi, SSH key/password, pinning host key, pengecekan identity                                          |
+| Ringkasan  | CPU, memori, uptime, versi, user HotSpot, queue, interface, grafik sampel CPU                                                         |
+| Diagnostik | Katalog `print` read-only, evidence mentah, hasil perintah dan pekerjaan                                                              |
+| Skill      | Skill JSON lama dan skill bandwidth/VPN tambahan; editor, validasi, impor, eksekusi                                                   |
+| Agent      | Workflow lokal untuk kondisi, bandwidth, jaringan, HotSpot, log, dan backup; model pilihan untuk percakapan, diagnostik, dan proposal |
+| Perubahan  | Apply/rollback `.rsc`, preconditions, verifikasi target, checksum, backup wajib, grant eksplisit                                      |
+| Pemulihan  | Hasil import tidak pasti diberi status `unknown`; pemeriksaan ulang atau rollback terarah                                             |
+| Arsip      | Backup export tersamarkan, laporan JSON, audit lokal, riwayat pekerjaan                                                               |
 
 Model belum diaktifkan pada instalasi baru. Workflow lokal tetap dapat bekerja. Untuk analisis bahasa alami, aktifkan endpoint kompatibel Chat Completions pada **Pengaturan**, pilih model yang mendukung function/tool calling, dan berikan izin pengiriman evidence. Ollama lokal dapat menggunakan `http://127.0.0.1:11434/v1`; pastikan server serta model yang dipilih sudah tersedia. Endpoint HTTPS lain dapat diisi sendiri.
 

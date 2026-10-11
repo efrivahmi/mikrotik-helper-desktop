@@ -1,3 +1,13 @@
+# Status paket 1.1.1 — 11 Oktober 2026
+
+Perbaikan ini mengganti paket lokal 1.0.0 yang masih digunakan shortcut. TypeScript dan build renderer/main/preload berhasil. Pengujian otomatis tidak dijalankan pada sesi perbaikan ini; hasil versi 1.0.0 di bawah adalah catatan historis.
+
+Invada 192.168.140.1:22 menghasilkan timeout pada pemeriksaan TCP. Pemilik mengonfirmasi sedang berada di luar lokasi router dan belum mempunyai koneksi ke jaringan tersebut. Autentikasi SSH, data monitoring, skill, backup router, apply/rollback, dan pemerataan bandwidth pada router nyata belum dapat dibuktikan dari sesi ini. Tidak ada konfigurasi router yang diubah.
+
+Rincian perbaikan dan batas verifikasi tersedia di [catatan perbaikan](REPAIR-20261011.md).
+
+---
+
 # Hasil validasi versi 1.0.0
 
 Tanggal: 5 Oktober 2026. Lingkungan build: Pop!_OS Linux x64, Node 22.23.3, Electron 44.5.1.
@@ -14,7 +24,7 @@ Tanggal: 5 Oktober 2026. Lingkungan build: Pop!_OS Linux x64, Node 22.23.3, Elec
 - Paket app.asar diperiksa: tidak memuat routers.json pribadi, known_hosts, key Invada, database pengguna, atau native addon yang dibangun untuk OS yang berbeda.
 - `npm audit --omit=dev`: tidak ada vulnerability yang dilaporkan pada dependensi produksi ketika diperiksa. Ini tidak menyatakan aplikasi bebas dari seluruh kelemahan.
 
-Screenshot pada direktori screenshots berasal dari fixture terisolasi. Label Arsip impor tetap terlihat agar data contoh tidak disalahartikan sebagai status live.
+Screenshot dan fixture demonstrasi dari validasi historis telah dikeluarkan dari workspace operasional. Aplikasi tidak memuat snapshot contoh.
 
 ## Pemeriksaan yang belum tersedia
 

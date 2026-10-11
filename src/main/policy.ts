@@ -1,5 +1,6 @@
 import { createHash } from "node:crypto";
 import type { PlanInput, Snapshot, Router } from "../shared/model";
+import { detailRows } from "../shared/routeros";
 
 export const MENUS = [
   "system identity",
@@ -193,7 +194,17 @@ export function matchesCheck(
 ): boolean {
   return (
     check.contains.every((text) => result.includes(text)) &&
-    (check.notContains || []).every((text) => !result.includes(text))
+    (check.notContains || []).every((text) => !result.includes(text)) &&
+    (!check.row ||
+      (() => {
+        const rows = detailRows(result);
+        return (
+          rows.length === 1 &&
+          Object.entries(check.row!).every(
+            ([key, value]) => rows[0][key] === value,
+          )
+        );
+      })())
   );
 }
 export function parseMetrics(
@@ -227,6 +238,8 @@ export const DIAGNOSTICS: Record<string, string> = {
   interfaces: "/interface print detail",
   "interface-stats": "/interface print stats-detail",
   neighbors: "/ip neighbor print detail",
+  bridges: "/interface bridge print detail",
+  "bridge-ports": "/interface bridge port print detail",
   vlans: "/interface vlan print detail",
   addresses: "/ip address print detail",
   routes: "/ip route print detail",
@@ -236,11 +249,13 @@ export const DIAGNOSTICS: Record<string, string> = {
   leases: "/ip dhcp-server lease print detail",
   hotspot: "/ip hotspot print detail",
   "hotspot-active-count": "/ip hotspot active print count-only",
+  "hotspot-active": "/ip hotspot active print detail",
   "hotspot-host-count": "/ip hotspot host print count-only",
   "hotspot-user-profile": "/ip hotspot user profile print detail",
   "mangle-detail": "/ip firewall mangle print detail",
   "mangle-stats": "/ip firewall mangle print stats",
   "queue-simple-count": "/queue simple print count-only",
+  "queue-simple": "/queue simple print detail",
   "queue-tree": "/queue tree print detail",
   "queue-tree-stats": "/queue tree print stats",
   "queue-types": "/queue type print detail",
