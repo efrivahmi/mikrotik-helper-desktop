@@ -1,0 +1,23 @@
+{
+  "name": "inspect-interface-queue",
+  "title": "Periksa Queue interface",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Queue interface langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "interface-queue",
+    "Bandwidth, PCQ & QoS"
+  ],
+  "commands": [
+    "/queue interface print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

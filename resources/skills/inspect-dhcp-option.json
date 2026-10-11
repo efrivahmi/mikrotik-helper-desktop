@@ -1,0 +1,23 @@
+{
+  "name": "inspect-dhcp-option",
+  "title": "Periksa Opsi DHCP",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Opsi DHCP langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "dhcp-option",
+    "DHCP"
+  ],
+  "commands": [
+    "/ip dhcp-server option print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

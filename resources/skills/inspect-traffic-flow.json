@@ -1,0 +1,23 @@
+{
+  "name": "inspect-traffic-flow",
+  "title": "Periksa NetFlow / IPFIX",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi NetFlow / IPFIX langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "traffic-flow",
+    "Sistem & monitoring"
+  ],
+  "commands": [
+    "/ip traffic-flow print"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

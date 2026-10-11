@@ -1,0 +1,23 @@
+{
+  "name": "inspect-l2tp-server",
+  "title": "Periksa L2TP server",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi L2TP server langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "l2tp-server",
+    "VPN & tunnel"
+  ],
+  "commands": [
+    "/interface l2tp-server server print"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

@@ -1,0 +1,10 @@
+# MikroTik Helper Desktop
+
+- Komunikasi dalam Bahasa Indonesia. Baca README, docs/AUTOMATION.md dan dokumentasi modul sebelum mengubah alur konfigurasi.
+- Prinsip pemilik: **backup dahulu sebelum eksekusi**. Sebelum perubahan proyek besar, arsipkan source/build terpasang dan backup SQLite yang konsisten; catat lokasi serta checksum. Jangan menyatakan backup dapat dipulihkan hanya berdasarkan sukses copy.
+- Setiap mutasi konfigurasi RouterOS, termasuk rollback, wajib melalui engine: review rencana terikat hash/router, grant admin, backup baru berhasil diunduh/diperiksa, baru import dan verifikasi. Backup gagal berarti berhenti. Jangan menyediakan jalan pintas apply pada renderer/model/skill.
+- Pengembangan aplikasi bukan izin mengubah router produksi. Invada memiliki batas perlindungan IP perangkat, portal, dan sesi dari pemilik; baca USER-CONSTRAINTS-INvada.md di helper asal sebelum pekerjaan router tersebut.
+- Gunakan evidence asli. Jangan menyimpan data contoh sebagai inventory, telemetry atau hasil koneksi pengguna. Ketiadaan koneksi/hardware/package harus terlihat sebagai belum tersedia atau error yang nyata.
+- Credential tetap terpisah dari script review, profile reusable, laporan dan Git. Jangan menampilkan token/private key/password. Keyring basic_text tidak boleh dipakai untuk persistence.
+- Source helper Python dan data operasional lama harus dipertahankan. Kedua repo milik pemilik harus tetap private. Backup full workspace bercredential hanya sesuai otorisasi pemilik yang sudah ada; tidak masuk source Git.
+- Build/typecheck tidak membuktikan layanan RouterOS berjalan. Catat status verifikasi jujur; jangan mengklaim semua WinBox/hardware telah didukung atau produksi telah lulus tanpa bukti.

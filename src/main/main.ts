@@ -14,12 +14,20 @@ import { z } from "zod";
 import { Store } from "./store";
 import { Engine, type Vault } from "./engine";
 import { modelEndpoint } from "./model-client";
+import { AutomationRequestSchema } from "./automation";
+import {
+  isSecretField,
+  type AutomationRequest,
+  type AutomationEvidence,
+} from "../shared/automation";
+import { randomUUID } from "node:crypto";
 import {
   SettingsSchema,
   type Plan,
   type Router,
   type Snapshot,
   type Job,
+  type DeploymentProfile,
 } from "../shared/model";
 
 let window: BrowserWindow, store: Store, engine: Engine;
@@ -156,6 +164,127 @@ async function create() {
     return engine.skill(v.id, v.name);
   });
   handle("skill.save", (p) => engine.saveSkill(p));
+  handle("automation.inspect", (p) => {
+    const v = z
+      .object({
+        id: uuid,
+        moduleIds: z.array(z.string().max(80)).min(1).max(150),
+      })
+      .parse(p);
+    return engine.inspectAutomation(v.id, v.moduleIds);
+  });
+  handle(
+    "automation.evidence",
+    (p) =>
+      store.get<AutomationEvidence>("automation-evidence", uuid.parse(p)) ||
+      null,
+  );
+  handle("automation.prepare", (p) => {
+    const v = z
+      .object({
+        request: AutomationRequestSchema,
+        persist: z.boolean().default(false),
+      })
+      .parse(p);
+    return engine.prepareAutomation(v.request, v.persist);
+  });
+  const scrubProfile = (
+    request: AutomationRequest,
+  ): DeploymentProfile["request"] => {
+    const scrub = (v: any): any =>
+      Array.isArray(v)
+        ? v.map(scrub)
+        : v && typeof v === "object"
+          ? Object.fromEntries(
+              Object.entries(v)
+                .filter(([key]) => key !== "originalValues")
+                .map(([key, value]) => [
+                  key,
+                  isSecretField(key) ? "" : scrub(value),
+                ]),
+            )
+          : v;
+    const { routerId: _router, evidenceId: _evidence, ...reusable } = request;
+    return scrub(reusable);
+  };
+  handle("profile.save", (p) => {
+    const v = z
+      .object({
+        name: z.string().trim().min(2).max(100),
+        request: AutomationRequestSchema,
+      })
+      .parse(p);
+    const profile: DeploymentProfile = {
+      id: randomUUID(),
+      name: v.name,
+      createdAt: new Date().toISOString(),
+      request: scrubProfile(v.request),
+    };
+    store.put("deployment-profile", profile.id, profile);
+    store.audit("", "profile.save", profile.name);
+    return profile;
+  });
+  handle("profile.delete", (p) => {
+    store.remove("deployment-profile", uuid.parse(p));
+    return true;
+  });
+  handle("profile.export", async (p) => {
+    const profile = store.get<DeploymentProfile>(
+      "deployment-profile",
+      uuid.parse(p),
+    );
+    if (!profile) throw new Error("Profil tidak ditemukan.");
+    const result = await dialog.showSaveDialog(window, {
+      title: "Ekspor profil konfigurasi",
+      defaultPath: "mikrotik-profile.json",
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (result.canceled || !result.filePath) return null;
+    writeFileSync(
+      result.filePath,
+      JSON.stringify(
+        {
+          format: "mikrotik-helper-profile-v1",
+          name: profile.name,
+          request: profile.request,
+        },
+        null,
+        2,
+      ),
+      { mode: 0o600 },
+    );
+    return result.filePath;
+  });
+  handle("profile.import", async () => {
+    const result = await dialog.showOpenDialog(window, {
+      title: "Impor profil konfigurasi",
+      properties: ["openFile"],
+      filters: [{ name: "JSON", extensions: ["json"] }],
+    });
+    if (result.canceled) return null;
+    const raw = readFileSync(result.filePaths[0], "utf8");
+    if (raw.length > 200000) throw new Error("Profil terlalu besar.");
+    const parsed = z
+      .object({
+        format: z.literal("mikrotik-helper-profile-v1"),
+        name: z.string().min(2).max(100),
+        request: z.record(z.string(), z.unknown()),
+      })
+      .parse(JSON.parse(raw));
+    const request = AutomationRequestSchema.parse({
+      ...parsed.request,
+      routerId: randomUUID(),
+      evidenceId: randomUUID(),
+    });
+    const profile: DeploymentProfile = {
+      id: randomUUID(),
+      name: parsed.name,
+      createdAt: new Date().toISOString(),
+      request: scrubProfile(request),
+    };
+    store.put("deployment-profile", profile.id, profile);
+    return profile;
+  });
   handle("plan.prepare", (p) => engine.prepare(p));
   handle("plan.reconcile", (p) => engine.reconcile(uuid.parse(p)));
   handle("plan.rate", (p) => {
@@ -195,6 +324,14 @@ async function create() {
     writeFileSync(join(dir, "plan.json"), JSON.stringify(plan, null, 2), {
       mode: 0o600,
     });
+    writeFileSync(
+      join(dir, "README.txt"),
+      "Paket untuk review. Terapkan melalui MikroTik Helper agar backup dan grant tetap wajib.\n" +
+        (Object.keys(plan.secretBindings || {}).length
+          ? "Script mengandung placeholder credential vault. Jangan import file ini langsung; password placeholder bukan credential asli.\n"
+          : ""),
+      { mode: 0o600 },
+    );
     return dir;
   });
   handle("chat", (p) => {
@@ -289,6 +426,9 @@ async function create() {
         .all("connection-report")
         .filter((r: any) => r.routerId === id),
       evidence: store.all("evidence").filter((r: any) => r.routerId === id),
+      automationEvidence: store
+        .all("automation-evidence")
+        .filter((r: any) => r.routerId === id),
       audit: state.audit.filter((a) => a.routerId === id),
     };
     writeFileSync(result.filePath, JSON.stringify(report, null, 2), {

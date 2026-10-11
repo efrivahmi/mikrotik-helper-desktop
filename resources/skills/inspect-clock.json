@@ -1,0 +1,23 @@
+{
+  "name": "inspect-clock",
+  "title": "Periksa Waktu & timezone",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Waktu & timezone langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "clock",
+    "Sistem & monitoring"
+  ],
+  "commands": [
+    "/system clock print"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

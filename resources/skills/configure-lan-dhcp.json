@@ -1,0 +1,37 @@
+{
+  "name": "configure-lan-dhcp",
+  "title": "LAN + DHCP server",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "IP gateway, pool, subnet DHCP dan server pada interface khusus.",
+  "domains": [
+    "ip-address",
+    "ip-pool",
+    "dhcp-network",
+    "dhcp-server"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Interface LAN",
+    "IP gateway LAN / prefix",
+    "Rentang DHCP",
+    "DNS client (pisahkan koma)"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "lan-dhcp"
+}

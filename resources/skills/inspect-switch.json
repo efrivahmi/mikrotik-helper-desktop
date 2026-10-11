@@ -1,0 +1,23 @@
+{
+  "name": "inspect-switch",
+  "title": "Periksa Chip switch",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Chip switch langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "switch",
+    "Interface, bridge & VLAN"
+  ],
+  "commands": [
+    "/interface ethernet switch print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

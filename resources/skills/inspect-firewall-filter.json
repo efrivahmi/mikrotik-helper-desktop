@@ -1,0 +1,23 @@
+{
+  "name": "inspect-firewall-filter",
+  "title": "Periksa Firewall IPv4",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Firewall IPv4 langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "firewall-filter",
+    "Firewall & NAT"
+  ],
+  "commands": [
+    "/ip firewall filter print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

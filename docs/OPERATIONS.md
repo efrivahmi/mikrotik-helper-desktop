@@ -14,7 +14,7 @@ PCQ tidak menjamin semua user mendapat laju total yang sama: classifier, kelas t
 
 ## Backup dan perubahan
 
-Backup menyimpan `/export hide-sensitive` pada RouterOS 6 dan export default dengan sensitive hidden pada RouterOS 7. Output juga melewati redaksi pola credential. Secret di luar pola yang dikenal tidak dijamin terdeteksi; periksa arsip sebelum dibagikan.
+Backup wajib menyimpan export tersamarkan, membuat biner AES-SHA256 dengan password acak, mengunduh dua kali, membandingkan SHA256 dan membaca ulang arsip lokal sebelum import. Berlaku pula untuk rollback. Lihat [Konfigurasi dan backup](AUTOMATION.md). Export memakai `/export hide-sensitive` pada RouterOS 6 dan default sensitive hidden pada RouterOS 7. Output juga melewati redaksi pola credential. Secret di luar pola yang dikenal tidak dijamin terdeteksi; periksa arsip sebelum dibagikan.
 
 Generator HotSpot membaca rate-limit lama dari snapshot live yang berumur maksimal 30 menit. Ia membuat rollback nilai lama dan precondition yang dicek ulang sebelum apply. Login aktif dapat membutuhkan login ulang untuk memperoleh batas baru.
 
@@ -55,7 +55,7 @@ Inventory tidak memberi jalur otomatis melalui internet. Pastikan komputer aplik
 
 ## Memindahkan workspace
 
-Tutup aplikasi sebelum menyalin folder userData agar database dan WAL konsisten. Credential terenkripsi terikat keyring komputer/akun asal; masukkan kembali credential pada komputer tujuan. Private key dan binary backup tetap dikelola terpisah. Menu Backup & riwayat dapat mengekspor laporan diagnostik JSON dengan data tersamarkan.
+Tutup aplikasi sebelum menyalin folder userData agar database dan WAL konsisten. Credential terenkripsi terikat keyring komputer/akun asal; masukkan kembali credential pada komputer tujuan. Private key dikelola terpisah; biner dan password pemulihan baru berada dalam folder privat backup. Menu Backup & riwayat dapat mengekspor laporan diagnostik JSON dengan data tersamarkan.
 
 ## Paket desktop yang aktif
 

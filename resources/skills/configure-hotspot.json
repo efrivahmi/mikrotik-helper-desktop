@@ -1,0 +1,54 @@
+{
+  "name": "configure-hotspot",
+  "title": "HotSpot + DHCP + profil user",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "HotSpot baru pada interface khusus; portal lama dan sesi user lain dipertahankan.",
+  "domains": [
+    "hotspot-server",
+    "hotspot-profile",
+    "hotspot-user-profile",
+    "ip-address",
+    "ip-pool",
+    "dhcp-network",
+    "dhcp-server",
+    "hotspot-user",
+    "firewall-nat",
+    "firewall-filter",
+    "dns"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Interface LAN",
+    "IP gateway LAN / prefix",
+    "Rentang DHCP",
+    "DNS client (pisahkan koma)",
+    "Domain portal lokal",
+    "Buat portal bawaan di direktori AGENT baru",
+    "Direktori portal yang tersedia (kosongkan bila membuat portal baru)",
+    "Interface internet HotSpot",
+    "Username HotSpot awal",
+    "Password HotSpot awal",
+    "Izinkan menonaktifkan FastTrack untuk limit HotSpot",
+    "Upload per login",
+    "Download per login",
+    "Login bersamaan per akun"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "hotspot"
+}

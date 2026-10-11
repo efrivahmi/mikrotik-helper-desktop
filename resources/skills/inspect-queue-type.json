@@ -1,0 +1,23 @@
+{
+  "name": "inspect-queue-type",
+  "title": "Periksa PCQ / FQ-CoDel / CAKE / queue type",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi PCQ / FQ-CoDel / CAKE / queue type langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "queue-type",
+    "Bandwidth, PCQ & QoS"
+  ],
+  "commands": [
+    "/queue type print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

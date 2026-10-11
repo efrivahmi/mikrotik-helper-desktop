@@ -1,0 +1,23 @@
+{
+  "name": "inspect-radius-incoming",
+  "title": "Periksa RADIUS CoA",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi RADIUS CoA langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "radius-incoming",
+    "HotSpot & autentikasi"
+  ],
+  "commands": [
+    "/radius incoming print"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

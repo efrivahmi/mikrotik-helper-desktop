@@ -1,0 +1,23 @@
+{
+  "name": "inspect-eoip",
+  "title": "Periksa EoIP tunnel",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi EoIP tunnel langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "eoip",
+    "VPN & tunnel"
+  ],
+  "commands": [
+    "/interface eoip print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

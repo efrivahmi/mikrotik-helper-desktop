@@ -1569,3 +1569,143 @@ dd {
   margin: 6px 0;
   line-height: 1.5;
 }
+
+.automation-layout {
+  display: grid;
+  grid-template-columns: 300px minmax(0, 1fr);
+  gap: 20px;
+  align-items: start;
+}
+.automation-catalog {
+  position: sticky;
+  top: 16px;
+}
+.automation-catalog-list {
+  max-height: calc(100vh - 340px);
+  overflow: auto;
+  padding: 0 16px 16px;
+}
+.automation-catalog-list h3 {
+  font-size: 12px;
+  color: var(--muted, #657386);
+  margin: 18px 6px 8px;
+}
+.automation-catalog-list button {
+  display: block;
+  width: 100%;
+  border: 0;
+  background: transparent;
+  text-align: left;
+  padding: 9px 10px;
+  margin: 2px 0;
+  white-space: normal;
+}
+.automation-catalog-list button.selected {
+  background: #eaf1fb;
+  color: #285993;
+  box-shadow: inset 3px 0 #4476b1;
+}
+.automation-tabs {
+  display: flex;
+  gap: 6px;
+  margin-bottom: 12px;
+}
+.automation-workspace {
+  min-width: 0;
+  display: grid;
+  gap: 20px;
+}
+.automation-field {
+  min-width: 0;
+  margin-bottom: 12px;
+}
+.automation-field > label {
+  display: block;
+  font-weight: 600;
+  font-size: 12px;
+  margin-bottom: 7px;
+}
+.automation-field input:not([type="checkbox"]),
+.automation-field select {
+  width: 100%;
+}
+.automation-field small {
+  display: block;
+  margin-top: 6px;
+  color: var(--muted, #657386);
+  font-size: 11px;
+}
+.automation-params {
+  margin-top: 20px;
+  border-top: 1px solid #e1e6ed;
+  padding-top: 18px;
+}
+.interface-options {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+  max-height: 130px;
+  overflow: auto;
+  padding: 6px 0;
+}
+.wan-list,
+.operation-list {
+  display: grid;
+  gap: 8px;
+}
+.wan-entry {
+  display: grid;
+  grid-template-columns: 1fr 1.2fr 65px 28px;
+  gap: 6px;
+  align-items: center;
+}
+.property-entry {
+  display: flex;
+  gap: 8px;
+  margin: 8px 0;
+  align-items: center;
+}
+.property-entry input {
+  min-width: 0;
+  flex: 1;
+}
+.automation-menu {
+  padding-top: 14px;
+}
+.automation-actions {
+  display: flex;
+  justify-content: flex-end;
+  margin: 18px 0 0;
+  gap: 8px;
+}
+.operation-list {
+  margin: 18px 0;
+  padding: 12px;
+  border: 1px solid #e1e6ed;
+  border-radius: 6px;
+  font-size: 12px;
+}
+.profile-entry {
+  display: flex;
+  gap: 8px;
+  align-items: center;
+  padding: 12px 0;
+  border-bottom: 1px solid #e1e6ed;
+}
+.profile-entry strong {
+  flex: 1;
+}
+.block {
+  display: block;
+  font-size: 11px;
+  color: #657386;
+  margin-top: 4px;
+}
+@media (max-width: 1250px) {
+  .automation-layout {
+    grid-template-columns: 240px minmax(0, 1fr);
+  }
+  .automation-layout .form-grid {
+    grid-template-columns: 1fr;
+  }
+}

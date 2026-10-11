@@ -1,0 +1,35 @@
+{
+  "name": "configure-wan-pppoe",
+  "title": "ISP PPPoE + NAT",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "PPPoE client dengan credential tersimpan terpisah dari script review.",
+  "domains": [
+    "pppoe-client",
+    "firewall-nat"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Interface ISP",
+    "Username PPPoE",
+    "Password PPPoE",
+    "Distance default route"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "wan-pppoe"
+}

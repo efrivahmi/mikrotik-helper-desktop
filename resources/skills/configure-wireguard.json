@@ -1,0 +1,38 @@
+{
+  "name": "configure-wireguard",
+  "title": "WireGuard management / site-to-site",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "Interface, alamat tunnel dan peer dengan public key yang diberikan; private key dibuat oleh RouterOS.",
+  "domains": [
+    "wireguard",
+    "wireguard-peer",
+    "ip-address"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Listen port",
+    "IP tunnel / prefix",
+    "Public key peer",
+    "Allowed address peer",
+    "Alamat endpoint peer",
+    "Port endpoint peer"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "wireguard"
+}

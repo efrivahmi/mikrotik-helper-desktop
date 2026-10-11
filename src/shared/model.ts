@@ -1,4 +1,5 @@
 import { z } from "zod";
+import type { AutomationEvidence, AutomationRequest } from "./automation";
 
 export const RouterSchema = z.object({
   id: z.string().uuid().optional(),
@@ -27,9 +28,18 @@ export const VerificationSchema = z
     contains: z.array(z.string().min(1).max(200)).max(10),
     notContains: z.array(z.string().min(1).max(200)).max(10).default([]),
     row: z.record(z.string().regex(/^[\w-]+$/), z.string().max(200)).optional(),
+    equals: z.string().max(2000).optional(),
+    valueType: z
+      .enum(["text", "boolean", "rate", "rate-pair", "time", "list"])
+      .optional(),
+    count: z.number().int().min(0).max(100000).optional(),
   })
   .refine(
-    (v) => v.contains.length > 0 || (v.row && Object.keys(v.row).length > 0),
+    (v) =>
+      v.contains.length > 0 ||
+      (v.row && Object.keys(v.row).length > 0) ||
+      v.equals !== undefined ||
+      v.count !== undefined,
     {
       message:
         "Verifikasi membutuhkan teks target atau nilai properti baris RouterOS.",
@@ -41,9 +51,26 @@ export const PlanInputSchema = z.object({
   reason: z.string().min(5).max(4000),
   apply: z.string().min(5).max(100000),
   rollback: z.string().min(5).max(100000),
-  verify: z.array(VerificationSchema).min(1).max(12),
-  rollbackVerify: z.array(VerificationSchema).min(1).max(12),
-  preconditions: z.array(VerificationSchema).max(12).default([]),
+  verify: z.array(VerificationSchema).min(1).max(512),
+  rollbackVerify: z.array(VerificationSchema).min(1).max(512),
+  preconditions: z.array(VerificationSchema).max(512).default([]),
+  secretBindings: z
+    .record(z.string().regex(/^__SECRET_[a-f0-9-]+__$/), z.string().uuid())
+    .optional(),
+  automation: z
+    .object({
+      name: z.string(),
+      recipeId: z.string().optional(),
+      jobId: z.string().uuid().optional(),
+      evidenceId: z.string().uuid(),
+      managementSubnet: z.string(),
+      managementInterface: z.string(),
+      alternateAccess: z.boolean(),
+      menus: z.array(z.string()),
+      identityBefore: z.string().optional(),
+      identityAfter: z.string().optional(),
+    })
+    .optional(),
 });
 export type PlanInput = z.infer<typeof PlanInputSchema>;
 export type Plan = PlanInput & {
@@ -132,6 +159,16 @@ export interface Backup {
   path: string;
   sha256: string;
   version: string;
+  binaryPath?: string;
+  binarySha256?: string;
+  passwordPath?: string;
+  verifiedAt?: string;
+}
+export interface DeploymentProfile {
+  id: string;
+  name: string;
+  createdAt: string;
+  request: Omit<AutomationRequest, "routerId" | "evidenceId">;
 }
 export interface Message {
   id: string;
@@ -209,4 +246,6 @@ export interface AppState {
   version: string;
   secureStorage: boolean;
   hasAiKey: boolean;
+  automationEvidence?: AutomationEvidence[];
+  deploymentProfiles?: DeploymentProfile[];
 }

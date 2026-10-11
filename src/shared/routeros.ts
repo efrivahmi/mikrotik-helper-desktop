@@ -2,16 +2,34 @@ import type { InterfaceTraffic, Snapshot } from "./model";
 
 export function detailRows(raw: string): Record<string, string>[] {
   const starts = [...raw.matchAll(/(?:^|\n)\s*(\d+)\s+([^\n]*)/g)];
+  const offsets = starts.map((match) => {
+    const prefix = raw.slice(0, match.index);
+    const comment = prefix.match(
+      /(?:^|\n)[ \t]*;;;[^\n]*(?:\n[ \t]*;;;[^\n]*)*[ \t]*$/,
+    );
+    return comment ? comment.index! : match.index!;
+  });
   return starts.map((match, i) => {
-    const block = raw.slice(match.index, starts[i + 1]?.index ?? raw.length);
+    const original = raw.slice(offsets[i], offsets[i + 1] ?? raw.length);
+    const block = original.replace(/^[ \t]*;;;[^\n]*/gm, "");
     const row: Record<string, string> = {
       index: match[1],
       flags: (match[2].split(/(?:[\w-]+=|;;;)/)[0] || "").trim(),
     };
+    const comment = original.match(/;;;[ \t]*([^\n]*)/);
+    if (comment) row.comment = comment[1].trim();
+    let namespace = "";
     for (const kv of block.matchAll(
-      /([\w-]+)=(?:"((?:\\.|[^"\\])*)"|([\s\S]*?))(?=\s+[\w-]+=|\s*$)/g,
-    ))
-      row[kv[1]] = (kv[2] ?? kv[3]).trim().replace(/\\"/g, '"');
+      /([\w.-]+)=(?:"((?:\\.|[^"\\])*)"|([\s\S]*?))(?=\s+[\w.-]+=|\s*$)/g,
+    )) {
+      const key = kv[1].startsWith(".") ? namespace + kv[1].slice(1) : kv[1];
+      if (key.includes(".")) namespace = key.slice(0, key.lastIndexOf(".") + 1);
+      row[key] = (kv[2] ?? kv[3]).trim().replace(/\\(["\\$])/g, "$1");
+    }
+    if (!("disabled" in row))
+      row.disabled = row.flags.includes("X") ? "yes" : "no";
+    if (!("dynamic" in row))
+      row.dynamic = row.flags.includes("D") ? "yes" : "no";
     return row;
   });
 }

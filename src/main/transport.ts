@@ -289,6 +289,47 @@ export class Session {
       });
     });
   }
+  download(name: string): Promise<Buffer> {
+    if (!/^AGENT-[a-f0-9-]+\.backup$/.test(name)) throw new Error("Nama backup tidak valid.");
+    return new Promise((resolve, reject) => {
+      let settled = false, buffer = Buffer.alloc(0), size = -1, channel: any;
+      const timer = setTimeout(() => finish(new Error("Download backup SCP timeout.")), 90000);
+      const finish = (error?: Error, data?: Buffer) => {
+        if (settled) return;
+        settled = true; clearTimeout(timer); channel?.close();
+        error ? reject(error) : resolve(data!);
+      };
+      const closed = () => finish(new Error("Sambungan terputus saat mengunduh backup."));
+      this.conn.once("close", closed);
+      this.conn.exec(`scp -f ${name}`, (error, stream) => {
+        if (error) { this.conn.removeListener("close", closed); return finish(error); }
+        channel = stream;
+        stream.once("close", () => { this.conn.removeListener("close", closed); if (!settled) finish(new Error("Download backup tidak lengkap.")); });
+        stream.on("error", finish);
+        stream.stderr.on("data", () => {});
+        stream.on("data", (chunk: Buffer) => {
+          if (settled) return;
+          if (buffer.length + chunk.length > 64 * 1024 * 1024 + 4096) return finish(new Error("Backup melebihi batas transfer 64 MiB."));
+          buffer = Buffer.concat([buffer, chunk]);
+          if (size < 0) {
+            const newline = buffer.indexOf(10); if (newline < 0) return;
+            const header = buffer.subarray(0, newline).toString("utf8");
+            const match = header.match(/^C[0-7]{4} (\d+) (.+)$/);
+            if (!match || match[2] !== name) return finish(new Error("Header file backup SCP tidak valid."));
+            size = Number(match[1]);
+            if (!Number.isSafeInteger(size) || size < 64 || size > 64*1024*1024) return finish(new Error("Ukuran backup tidak valid."));
+            buffer = buffer.subarray(newline + 1); stream.write(Buffer.from([0]));
+          }
+          if (buffer.length >= size + 1) {
+            if (buffer[size] !== 0 || buffer.length !== size + 1) return finish(new Error("Transfer backup SCP gagal cocok."));
+            const payload = Buffer.from(buffer.subarray(0, size));
+            stream.write(Buffer.from([0]), () => finish(undefined, payload));
+          }
+        });
+        stream.write(Buffer.from([0]));
+      });
+    });
+  }
   upload(name: string, content: string): Promise<void> {
     if (!/^AGENT-[a-f0-9-]+\.rsc$/.test(name))
       throw new Error("Nama upload tidak valid.");

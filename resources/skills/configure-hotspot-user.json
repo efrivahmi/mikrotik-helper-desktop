@@ -1,0 +1,35 @@
+{
+  "name": "configure-hotspot-user",
+  "title": "User / voucher HotSpot",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "Akun HotSpot baru dengan profil dan batas uptime yang dipilih.",
+  "domains": [
+    "hotspot-user",
+    "hotspot-user-profile"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Username voucher",
+    "Password voucher",
+    "Profil user yang tersedia",
+    "Batas uptime, misalnya 1d atau 0"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "hotspot-user"
+}

@@ -1,0 +1,23 @@
+{
+  "name": "inspect-graphing-resource",
+  "title": "Periksa Grafik resource",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Grafik resource langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "graphing-resource",
+    "Sistem & monitoring"
+  ],
+  "commands": [
+    "/tool graphing resource print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

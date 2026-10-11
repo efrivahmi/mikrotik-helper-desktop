@@ -15,9 +15,9 @@ Pembaruan UI membaca SQLite setiap 2,5 detik. Payload ringkasan hanya membawa ev
 - BrowserWindow menggunakan sandbox, context isolation, tanpa nodeIntegration; popup, navigasi eksternal dan permission browser ditolak. Pola ini mengikuti [panduan keamanan Electron](https://www.electronjs.org/docs/latest/tutorial/security).
 - Host SSH dipin dengan SHA256 fingerprint. Host yang berubah ditolak; trust baru harus berasal dari probe aplikasi dan persetujuan admin.
 - Password/passphrase/API key disimpan dengan safeStorage saat keyring OS tersedia. Backend `basic_text` Linux tidak dipakai untuk persistence. Credential sesi disimpan di memori. Private key dibaca dari path yang dipilih pengguna, bukan disalin ke distribusi.
-- Diagnostik menggunakan grammar sederhana untuk menu `print` yang disetujui. Script, rangkaian perintah, ekspresi, `print file`, dan subscriptions ditolak.
+- Diagnostik menggunakan grammar sederhana untuk menu `print` serta fixed property `get` non-secret yang disetujui. Script, rangkaian perintah, ekspresi, `print file`, dan subscriptions ditolak.
 - Rencana mutasi mempunyai hash isi dan target koneksi. Persetujuan harus menyebut nama router dan prefiks hash yang ditampilkan.
-- Model hanya memiliki tool `diagnose` dan `propose_change`; tool apply/rollback tidak diberikan. Tool request dan script hasil model melewati validasi backend yang sama.
+- Model memiliki tool pembacaan catalog/menu, compiler proposal paket, `diagnose` dan `propose_change`; tool apply/rollback tidak diberikan. Tool request dan script hasil model melewati validasi backend yang sama.
 - Log dan konfigurasi perangkat dianggap sebagai data tidak tepercaya, bukan instruksi agent.
 
 ## Status pekerjaan dan rencana
@@ -30,4 +30,4 @@ Rencana: `draft → applying → applied | needs-review | unknown`. Rollback yan
 
 ## Pengembangan berikutnya
 
-Prioritas berikutnya adalah adapter REST RouterOS 7, generator konfigurasi dasar tambahan, pengukuran laju interface dari dua sampel, dashboard per lokasi, dan format verifikasi terstruktur selain pencocokan teks. Masing-masing dapat ditambahkan lewat engine/adapter tanpa memberi renderer akses SSH langsung. Distribusi signed Windows membutuhkan sertifikat publisher milik pemilik project.
+Compiler automation 1.2.0 mendukung paket/formulir dan editor menu dengan count/property checks bertipe, precondition serta rollback. Transfer backup menggunakan SCP dan hash dua pembacaan. Prioritas berikutnya adalah adapter REST RouterOS 7, backup khusus User Manager/The Dude, dan pengujian perangkat nyata/Windows native untuk setiap kombinasi paket/hardware. Masing-masing dapat ditambahkan lewat engine/adapter tanpa memberi renderer akses SSH langsung. Distribusi signed Windows membutuhkan sertifikat publisher milik pemilik project.

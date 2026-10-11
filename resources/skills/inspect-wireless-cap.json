@@ -1,0 +1,23 @@
+{
+  "name": "inspect-wireless-cap",
+  "title": "Periksa CAP legacy",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi CAP legacy langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "wireless-cap",
+    "WiFi & CAPsMAN"
+  ],
+  "commands": [
+    "/interface wireless cap print"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

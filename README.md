@@ -2,11 +2,11 @@
 
 Aplikasi desktop untuk mengelola banyak router melalui alur helper yang sudah Anda rancang: koneksi, evidence, backup, rencana, review, persetujuan, apply, verifikasi, dan rollback. UI menggunakan navigasi konsol administrasi, tabel perangkat, editor script, serta riwayat pekerjaan dalam Bahasa Indonesia.
 
-Versi 1.1.1 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
+Versi 1.2.0 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
 
 ## Mulai menggunakan
 
-1. Jalankan `MikroTik-Helper-Setup-1.1.1-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.1.1-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
+1. Jalankan `MikroTik-Helper-Setup-1.2.0-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.2.0-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
 2. Buka **Router → Impor helper lama** dan pilih direktori `mikrotik-helper-agent`. Inventory dan skill JSON akan diimpor. Dashboard membaca data melalui koneksi aplikasi ini. Backup dan riwayat lama tetap berada di workspace asal.
 3. Periksa IP, port SSH, username, expected identity, dan lokasi private key. Saat berpindah ke Windows, pilih kembali file key yang tersedia di komputer Windows.
 4. Pilih **Hubungkan**, bandingkan fingerprint host key dengan perangkat melalui jalur yang dipercaya, lalu setujui. Setelah itu aplikasi mengambil snapshot.
@@ -18,8 +18,8 @@ Versi 1.1.1 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Li
 Buka shortcut **MikroTik Helper** di Desktop atau menu aplikasi pada komputer ini. Alternatifnya, jalankan AppImage dari `release/`:
 
 ```bash
-chmod +x release/MikroTik-Helper-1.1.1-x86_64.AppImage
-./release/MikroTik-Helper-1.1.1-x86_64.AppImage
+chmod +x release/MikroTik-Helper-1.2.0-x86_64.AppImage
+./release/MikroTik-Helper-1.2.0-x86_64.AppImage
 ```
 
 Jika AppImage tidak dapat berjalan karena FUSE belum tersedia, jalankan dengan opsi `--appimage-extract-and-run`. Untuk memasang ulang shortcut setelah memindahkan project atau melakukan build baru, jalankan `node scripts/install-local.mjs`.
@@ -39,7 +39,7 @@ Jika komputer berada di luar jaringan router, gunakan VPN management atau hubung
 | Agent      | Workflow lokal untuk kondisi, bandwidth, jaringan, HotSpot, log, dan backup; model pilihan untuk percakapan, diagnostik, dan proposal |
 | Perubahan  | Apply/rollback `.rsc`, preconditions, verifikasi target, checksum, backup wajib, grant eksplisit                                      |
 | Pemulihan  | Hasil import tidak pasti diberi status `unknown`; pemeriksaan ulang atau rollback terarah                                             |
-| Arsip      | Backup export tersamarkan, laporan JSON, audit lokal, riwayat pekerjaan                                                               |
+| Arsip      | Backup export + biner terenkripsi dengan SHA256/pembacaan ulang, laporan JSON, audit lokal, riwayat pekerjaan                         |
 
 Model belum diaktifkan pada instalasi baru. Workflow lokal tetap dapat bekerja. Untuk analisis bahasa alami, aktifkan endpoint kompatibel Chat Completions pada **Pengaturan**, pilih model yang mendukung function/tool calling, dan berikan izin pengiriman evidence. Ollama lokal dapat menggunakan `http://127.0.0.1:11434/v1`; pastikan server serta model yang dipilih sudah tersedia. Endpoint HTTPS lain dapat diisi sendiri.
 
@@ -90,9 +90,13 @@ Data pengguna dibuat di direktori userData Electron, ditampilkan pada **Pengatur
 
 ## Batas penggunaan versi ini
 
-Konfigurasi RouterOS 6/7 harus tetap direview sesuai versi dan topologi. Scanner script memeriksa pola yang diketahui; ia bukan parser lengkap atau pembuktian keamanan. Backup otomatis merupakan export konfigurasi yang menyamarkan secret, sehingga tidak menggantikan binary backup atau prosedur pemulihan credential. Model AI menghasilkan proposal yang perlu ditinjau.
+Konfigurasi RouterOS 6/7 harus tetap direview sesuai versi dan topologi. Scanner script memeriksa pola yang diketahui; ia bukan parser lengkap atau pembuktian keamanan. Backup otomatis mencakup export tersamarkan dan biner AES-SHA256 yang diunduh dua kali serta diperiksa. Pemulihan perangkat belum dibuktikan; User Manager/The Dude/custom files membutuhkan prosedur arsip tersendiri. Model AI menghasilkan proposal yang perlu ditinjau.
 
 Paket Windows dibangun dari Linux; validasi pada Windows native tetap diperlukan sebelum rollout luas. RouterOS produksi tidak diberi perubahan sebagai bagian dari pengujian aplikasi. Detail: [hasil validasi](docs/VALIDATION.md), [operasi](docs/OPERATIONS.md), [arsitektur](docs/ARCHITECTURE.md), dan [pengembangan skill](docs/SKILLS.md).
+
+## Konfigurasi melalui formulir
+
+Halaman **Konfigurasi** menyediakan 26 paket siap isi, 132 menu pembacaan (129 dengan editor mutasi), dan profil reusable tanpa credential. Firewall, VLAN/IP/DHCP, ISP/PCC, PCQ/QoS, HotSpot, WiFi/CAPsMAN dan VPN memakai data SSH asli, compiler rollback serta backup/grant sebelum apply. [Panduan lengkap dan batas dukungan](docs/AUTOMATION.md). Build 1.2.0 sudah dikompilasi; fitur baru belum diuji pada RouterOS/Windows native.
 
 ## Repository GitHub
 

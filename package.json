@@ -1,7 +1,7 @@
 {
   "name": "mikrotik-helper-desktop",
   "productName": "MikroTik Helper",
-  "version": "1.1.1",
+  "version": "1.2.0",
   "description": "Desktop console for evidence-based MikroTik operations",
   "author": "MikroTik Helper Workspace",
   "license": "UNLICENSED",
@@ -9,13 +9,14 @@
   "main": "dist/main/main.cjs",
   "scripts": {
     "dev": "node scripts/dev.mjs",
-    "build": "tsc --noEmit && vite build && node scripts/build-main.mjs",
+    "build": "npm run skills:build && tsc --noEmit && vite build && node scripts/build-main.mjs",
     "start": "electron .",
     "test": "tsx --test tests/*.test.ts",
     "test:ui": "node scripts/smoke.mjs",
     "dist:win": "npm run build && electron-builder --win nsis portable --x64 --publish never",
     "dist:linux": "npm run build && electron-builder --linux AppImage --x64 --publish never",
-    "format": "prettier --write src scripts tests docs README.md"
+    "format": "prettier --write src scripts tests docs README.md",
+    "skills:build": "tsx scripts/build-automation-skills.ts"
   },
   "dependencies": {
     "ssh2": "1.17.0",

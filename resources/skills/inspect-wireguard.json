@@ -1,0 +1,23 @@
+{
+  "name": "inspect-wireguard",
+  "title": "Periksa WireGuard interface",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi WireGuard interface langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "wireguard",
+    "VPN & tunnel"
+  ],
+  "commands": [
+    "/interface wireguard print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

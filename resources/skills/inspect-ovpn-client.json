@@ -1,0 +1,23 @@
+{
+  "name": "inspect-ovpn-client",
+  "title": "Periksa OpenVPN client",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi OpenVPN client langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "ovpn-client",
+    "VPN & tunnel"
+  ],
+  "commands": [
+    "/interface ovpn-client print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

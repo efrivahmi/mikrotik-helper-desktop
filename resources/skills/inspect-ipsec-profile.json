@@ -1,0 +1,23 @@
+{
+  "name": "inspect-ipsec-profile",
+  "title": "Periksa IPsec profile",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi IPsec profile langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "ipsec-profile",
+    "VPN & tunnel"
+  ],
+  "commands": [
+    "/ip ipsec profile print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

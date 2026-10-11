@@ -52,6 +52,7 @@ import type {
   ModelCheck,
 } from "../shared/model";
 import { detailRows } from "../shared/routeros";
+import { AutomationPage } from "./AutomationPage";
 
 const api = window.helper.invoke;
 const connectionLabels: Record<ConnectionState["status"], string> = {
@@ -79,6 +80,7 @@ const nav = [
   ["overview", "Ringkasan", Gauge],
   ["routers", "Router", RouterIcon],
   ["agent", "Agent", Activity],
+  ["automation", "Konfigurasi", Layers3],
   ["diagnostics", "Diagnostik", Terminal],
   ["skills", "Pustaka skill", BookOpen],
   ["plans", "Perubahan", FileCode2],
@@ -381,6 +383,12 @@ export function App() {
     for (const job of state?.jobs || []) {
       if (!activeJobs.current.has(job.id) || job.state === "running") continue;
       activeJobs.current.delete(job.id);
+      const prepared = state?.plans.find((p) => p.automation?.jobId === job.id);
+      if (prepared && job.state === "done") {
+        setSelectedPlan(prepared.id);
+        setSelectedJob(null);
+        setView("plans");
+      }
       setToast({
         text:
           job.state === "failed"
@@ -405,6 +413,8 @@ export function App() {
             "chat",
             "plan.apply",
             "plan.reconcile",
+            "automation.inspect",
+            "automation.prepare",
           ].includes(method) &&
           typeof result === "string"
         ) {
@@ -415,6 +425,8 @@ export function App() {
               "skill.run",
               "plan.apply",
               "plan.reconcile",
+              "automation.inspect",
+              "automation.prepare",
             ].includes(method)
           ) {
             const job = await api<Job>("job.read", result);
@@ -449,7 +461,8 @@ export function App() {
     return () => clearInterval(timer);
   }, [auto, router?.fingerprint, busy, pending, run, selected]);
   const runRouter = async (method: string, input: any, success?: string) => {
-    const id = typeof input === "string" ? input : input.id;
+    const id =
+      typeof input === "string" ? input : input.id || input.request?.routerId;
     const target = state?.routers.find((r) => r.id === id);
     if (!target) return;
     if (!target.fingerprint) {
@@ -596,6 +609,8 @@ export function App() {
                       "Kelola koneksi dan identitas perangkat di seluruh lokasi.",
                     agent:
                       "Jalankan pemeriksaan dan siapkan perubahan dari satu ruang kerja.",
+                    automation:
+                      "Pilih paket atau menu RouterOS. Siapkan konfigurasi dengan evidence, backup dan persetujuan.",
                     diagnostics:
                       "Baca kondisi RouterOS dan periksa evidence yang terkumpul.",
                     skills:
@@ -770,6 +785,17 @@ export function App() {
               bisa mengimpor inventory helper lama dari halaman Router.
             </Empty>
           ) : null}
+          {view === "automation" && router && (
+            <AutomationPage
+              key={router.id}
+              state={state}
+              router={router}
+              busy={busy}
+              pending={pending}
+              run={run}
+              runRouter={runRouter}
+            />
+          )}
           {view === "overview" && router && (
             <>
               <div className="device-strip">
@@ -1676,7 +1702,11 @@ export function App() {
                                         `${key}=${JSON.stringify(value)}`,
                                     )
                                     .join(" · ")}`
-                                : `Harus memuat: ${v.contains.join(" · ")}`}
+                                : v.count !== undefined
+                                  ? `Jumlah record: ${v.count}`
+                                  : v.equals !== undefined
+                                    ? `Nilai target: ${JSON.stringify(v.equals)}${v.valueType ? ` (${v.valueType})` : ""}`
+                                    : `Harus memuat: ${v.contains.join(" · ")}`}
                             </small>
                           </div>
                         ))}
@@ -1771,8 +1801,8 @@ export function App() {
                   <div>
                     <h2>Backup konfigurasi</h2>
                     <small>
-                      Export RouterOS dengan secret disamarkan · bukan binary
-                      backup
+                      Export tersamarkan + backup biner terenkripsi · SHA256 dan
+                      pembacaan ulang sebelum eksekusi
                     </small>
                   </div>
                   <button
@@ -1800,7 +1830,14 @@ export function App() {
                       .map((b) => (
                         <tr key={b.id}>
                           <td>{date(b.createdAt)}</td>
-                          <td>{b.version}</td>
+                          <td>
+                            {b.version}
+                            <small className="block">
+                              {b.verifiedAt
+                                ? "Export + biner · hash cocok"
+                                : "Arsip lama · export saja"}
+                            </small>
+                          </td>
                           <td className="mono">{b.sha256.slice(0, 24)}…</td>
                           <td className="right">
                             <button
@@ -2669,9 +2706,10 @@ function Grant({
         {rollback ? plan.rollback : plan.apply}
       </pre>
       <div className="notice">
-        Backup baru dibuat sebelum import. Import dapat selesai sebagian jika
-        koneksi putus; aplikasi tidak mengulangnya otomatis. Verifikasi
-        dilakukan sesudah import.
+        Export dan backup biner terenkripsi harus berhasil diunduh dan diperiksa
+        sebelum import. Jika backup gagal, eksekusi berhenti. Import dapat
+        selesai sebagian jika koneksi putus; aplikasi tidak mengulangnya
+        otomatis. Verifikasi dilakukan sesudah import.
       </div>
       <Field
         label={`Ketik persis: ${phrase}`}

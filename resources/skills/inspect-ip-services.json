@@ -1,0 +1,23 @@
+{
+  "name": "inspect-ip-services",
+  "title": "Periksa SSH, WinBox & API",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi SSH, WinBox & API langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "ip-services",
+    "IP & management"
+  ],
+  "commands": [
+    "/ip service print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

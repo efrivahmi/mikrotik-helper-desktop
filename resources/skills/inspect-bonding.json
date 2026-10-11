@@ -1,0 +1,23 @@
+{
+  "name": "inspect-bonding",
+  "title": "Periksa Bonding / LACP",
+  "version": "1.2.0",
+  "mode": "read-only",
+  "purpose": "Baca konfigurasi Bonding / LACP langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
+  "domains": [
+    "bonding",
+    "Interface, bridge & VLAN"
+  ],
+  "commands": [
+    "/interface bonding print detail without-paging"
+  ],
+  "checks": [
+    "Identitas perangkat dan versi sesuai",
+    "Target statis dan selector unik",
+    "Dampak pada management dan user aktif"
+  ],
+  "safety": [
+    "Tidak mengubah konfigurasi",
+    "Gunakan Konfigurasi untuk rencana; backup dan grant wajib"
+  ]
+}

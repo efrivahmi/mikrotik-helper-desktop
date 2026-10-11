@@ -1,67 +1,102 @@
 import { createHash } from "node:crypto";
 import type { PlanInput, Snapshot, Router } from "../shared/model";
 import { detailRows } from "../shared/routeros";
+import { CONFIG_MODULES, isSecretField } from "../shared/automation";
 
 export const MENUS = [
-  "system identity",
-  "system resource",
-  "system routerboard",
-  "system package",
-  "system clock",
-  "system health",
-  "interface",
-  "interface ethernet",
-  "interface vlan",
-  "interface bridge",
-  "interface bridge port",
-  "interface bridge vlan",
-  "interface l2tp-client",
-  "interface wireguard",
-  "ip address",
-  "ip neighbor",
-  "ip route",
-  "routing route",
-  "routing rule",
-  "ip firewall filter",
-  "ip firewall nat",
-  "ip firewall mangle",
-  "ip firewall address-list",
-  "ip firewall connection",
-  "ip service",
-  "ip dns",
-  "ip dhcp-server",
-  "ip dhcp-server network",
-  "ip dhcp-server lease",
-  "ip pool",
-  "ip hotspot",
-  "ip hotspot active",
-  "ip hotspot host",
-  "ip hotspot user profile",
-  "ip hotspot profile",
-  "queue simple",
-  "queue tree",
-  "queue type",
-  "ip ipsec active-peers",
-  "ip ipsec policy",
-  "log",
-  "interface wireless registration-table",
-  "interface wifi registration-table",
-  "caps-man registration-table",
+  ...new Set([
+    "system identity",
+    "system resource",
+    "system routerboard",
+    "system package",
+    "system clock",
+    "system health",
+    "interface",
+    "interface ethernet",
+    "interface vlan",
+    "interface bridge",
+    "interface bridge port",
+    "interface bridge vlan",
+    "interface l2tp-client",
+    "interface wireguard",
+    "ip address",
+    "ip neighbor",
+    "ip route",
+    "routing route",
+    "routing rule",
+    "ip firewall filter",
+    "ip firewall nat",
+    "ip firewall mangle",
+    "ip firewall address-list",
+    "ip firewall connection",
+    "ip service",
+    "ip dns",
+    "ip dhcp-server",
+    "ip dhcp-server network",
+    "ip dhcp-server lease",
+    "ip pool",
+    "ip hotspot",
+    "ip hotspot active",
+    "ip hotspot host",
+    "ip hotspot user profile",
+    "ip hotspot profile",
+    "queue simple",
+    "queue tree",
+    "queue type",
+    "ip ipsec active-peers",
+    "ip ipsec policy",
+    "log",
+    "interface wireless registration-table",
+    "interface wifi registration-table",
+    "caps-man registration-table",
+    "system license",
+    "system device-mode",
+    "file",
+    "interface wifi radio",
+    ...CONFIG_MODULES.map((m) => m.menu),
+  ]),
 ];
 
 export function readCommand(input: string): string {
-  const command = input.trim().replace(/\s+/g, " ");
-  if (/[;\r\n\[\]{}$`\\#]/.test(input) || input.length > 1000)
+  const command = input.trim();
+  if (/[\r\n\x00]/.test(input) || input.length > 1000)
     throw new Error(
       "Hanya satu perintah diagnostik yang diizinkan. Script dan ekspresi tidak diizinkan.",
     );
-  const match = command.match(/^\/([a-z -]+?) print(?: (.*))?$/);
+  const literal = String.raw`(?:"(?:\\["\\$]|[^"\\$\r\n])*"|[a-zA-Z0-9_.:/,@!+*-]+)`;
+  const property = String.raw`[a-zA-Z][\w.-]*`;
+  const predicate = new RegExp(`^${property}=${literal}$`);
+  const get = command.match(
+    /^:put \[\/([a-z0-9 -]+?) get(?: \[find where (.+)\])? ([a-zA-Z][\w.-]*)\]$/,
+  );
+  if (get) {
+    if (!MENUS.includes(get[1]) || isSecretField(get[3]))
+      throw new Error("Properti get tidak tersedia untuk diagnostik.");
+    if (
+      get[2] &&
+      !new RegExp(
+        `^${property}=${literal}(?: and ${property}=${literal})*$`,
+      ).test(get[2])
+    )
+      throw new Error("Selector get tidak valid.");
+    if (
+      get[2] &&
+      [...get[2].matchAll(new RegExp(`(${property})=${literal}`, "g"))].some(
+        (m) => isSecretField(m[1]),
+      )
+    )
+      throw new Error("Selector credential tidak tersedia untuk diagnostik.");
+    return command;
+  }
+  const match = command.match(/^\/([a-z0-9 -]+?) print(?: (.*))?$/);
   if (!match || !MENUS.includes(match[1]))
     throw new Error(
       "Menu/perintah ini belum tersedia di katalog diagnostik. Gunakan menu print yang didukung.",
     );
   const tail = match[2] || "";
-  const tokens = tail.match(/(?:[^\s"]+|"[^"]*")+/g) || [];
+  const tokens = tail.match(/(?:[^\s"]+|"(?:\\.|[^"\\])*")+/g) || [];
+  if (tokens.join(" ") !== tail)
+    throw new Error("Grammar diagnostik tidak valid.");
   for (const token of tokens) {
     if (
       [
@@ -72,15 +107,11 @@ export function readCommand(input: string): string {
         "stats-detail",
         "without-paging",
         "where",
+        "and",
       ].includes(token)
     )
       continue;
-    if (
-      /^(name|comment|interface|dynamic|disabled|running|routing-mark|chain|topics|dst-address|src-address)=(?:[a-zA-Z0-9_.:/-]+|"[a-zA-Z0-9 _.:/@-]*")$/.test(
-        token,
-      )
-    )
-      continue;
+    if (predicate.test(token) && !isSecretField(token.split("=")[0])) continue;
     throw new Error(`Argumen diagnostik tidak diizinkan: ${token}`);
   }
   // Singleton menus have no paginated rows; RouterOS 6 rejects table options here.
@@ -91,6 +122,9 @@ export function readCommand(input: string): string {
       "system routerboard",
       "system clock",
       "ip dns",
+      "system license",
+      "system device-mode",
+      ...CONFIG_MODULES.filter((m) => m.singleton).map((m) => m.menu),
     ].includes(match[1])
   ) {
     if (tokens.some((t) => !["detail", "without-paging"].includes(t)))
@@ -107,7 +141,7 @@ export function readCommand(input: string): string {
 export function redact(text: string): string {
   return text
     .replace(
-      /((?:password|passwd|secret|ipsec-secret|private-key|passphrase|token|api-key)\s*[=:]\s*)(?:"(?:\\.|[^"\\])*"|'[^']*'|[^\s;]+)/gi,
+      /((?:password|passwd|secret|ipsec-secret|private-key|passphrase|token|api-key|pre-shared-key|preshared-key|auth-key|authentication-key|encryption-key)\s*[=:]\s*)(?:"(?:\\.|[^"\\])*"|'[^']*'|[^\s;]+)/gi,
       "$1[REDACTED]",
     )
     .replace(
@@ -120,7 +154,10 @@ export function remoteError(output: string): boolean {
     output,
   );
 }
-export function scriptReview(text: string): string[] {
+export function scriptReview(
+  text: string,
+  secrets: Record<string, string> = {},
+): string[] {
   if (text.includes("\0")) throw new Error("Script mengandung karakter NUL.");
   const body = text
     .split(/\r?\n/)
@@ -133,12 +170,23 @@ export function scriptReview(text: string): string[] {
   if (
     /(?:\/|\b)(?:system\s+(?:scheduler|script)|tool\s+(?:fetch|telnet|ssh)|execute)\b/i.test(
       body,
-    ) ||
-    /\b(?:password|secret|private-key|passphrase)\s*=/i.test(body)
+    )
   )
     throw new Error(
       "Script terjadwal, eksekusi eksternal, dan penulisan credential tidak didukung dalam rencana umum.",
     );
+  for (const match of body.matchAll(
+    /\b(?:[\w.-]*password|[\w.-]*secret|[\w.-]*private-key|[\w.-]*passphrase|[\w.-]*pre-shared-key|[\w.-]*preshared-key|[\w.-]*auth-key|[\w.-]*authentication-key|[\w.-]*encryption-key)\s*=\s*("(?:\\.|[^"\\])*"|[^\s;]+)/gi,
+  )) {
+    const marker = match[1].slice(1, -1);
+    if (
+      !/^__SECRET_[a-f0-9-]+__$/.test(marker) ||
+      !Object.hasOwn(secrets, marker)
+    )
+      throw new Error(
+        "Credential harus memakai binding vault dari automation, bukan plaintext dalam script.",
+      );
+  }
   const risks: string[] = [];
   if (/\b(remove|disable)\b/i.test(body))
     risks.push("Menghapus atau menonaktifkan objek.");
@@ -171,6 +219,8 @@ export function planHash(plan: PlanInput): string {
         verify: plan.verify,
         rollbackVerify: plan.rollbackVerify,
         preconditions: plan.preconditions,
+        ...(plan.secretBindings ? { secretBindings: plan.secretBindings } : {}),
+        ...(plan.automation ? { automation: plan.automation } : {}),
       }),
     )
     .digest("hex");
@@ -188,6 +238,67 @@ export function targetHash(router: Router): string {
     )
     .digest("hex");
 }
+export function normalizedValue(value: string, kind?: string): string {
+  if (kind === "boolean")
+    return /^(?:yes|true)$/i.test(value)
+      ? "true"
+      : /^(?:no|false)$/i.test(value)
+        ? "false"
+        : value;
+  if (kind === "rate") {
+    const m = value.match(/^(\d+(?:\.\d+)?)([kMG]?)$/);
+    return m
+      ? String(
+          Number(m[1]) *
+            (
+              { "": 1, k: 1000, M: 1000000, G: 1000000000 } as Record<
+                string,
+                number
+              >
+            )[m[2]],
+        )
+      : value;
+  }
+  if (kind === "rate-pair")
+    return value
+      .split(/[ /]+/)
+      .map((v) => normalizedValue(v, "rate"))
+      .join("/");
+  if (kind === "list")
+    return value
+      .split(/[;,]/)
+      .map((v) => v.trim())
+      .sort()
+      .join(",");
+  if (kind === "time") {
+    if (value === "0" || value === "0s") return "0";
+    const parts = [...value.matchAll(/(\d+(?:\.\d+)?)(w|d|h|ms|m|s)/g)];
+    if (parts.length && parts.map((p) => p[0]).join("") === value)
+      return String(
+        parts.reduce(
+          (n, p) =>
+            n +
+            Number(p[1]) *
+              (
+                {
+                  w: 604800,
+                  d: 86400,
+                  h: 3600,
+                  m: 60,
+                  s: 1,
+                  ms: 0.001,
+                } as Record<string, number>
+              )[p[2]],
+          0,
+        ),
+      );
+    if (/^\d+:\d{2}:\d{2}$/.test(value)) {
+      const p = value.split(":").map(Number);
+      return String(p[0] * 3600 + p[1] * 60 + p[2]);
+    }
+  }
+  return value;
+}
 export function matchesCheck(
   result: string,
   check: PlanInput["verify"][number],
@@ -195,6 +306,11 @@ export function matchesCheck(
   return (
     check.contains.every((text) => result.includes(text)) &&
     (check.notContains || []).every((text) => !result.includes(text)) &&
+    (check.equals === undefined ||
+      normalizedValue(result.replace(/[\r\n]+$/, ""), check.valueType) ===
+        normalizedValue(check.equals, check.valueType)) &&
+    (check.count === undefined ||
+      (/^\d+$/.test(result.trim()) && Number(result.trim()) === check.count)) &&
     (!check.row ||
       (() => {
         const rows = detailRows(result);

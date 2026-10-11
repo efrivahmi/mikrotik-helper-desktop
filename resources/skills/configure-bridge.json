@@ -1,0 +1,32 @@
+{
+  "name": "configure-bridge",
+  "title": "Bridge LAN baru",
+  "version": "1.2.0",
+  "mode": "plan-only",
+  "purpose": "Menggabungkan port bebas; port management tidak dipindahkan.",
+  "domains": [
+    "bridge",
+    "bridge-port"
+  ],
+  "commands": [],
+  "checks": [],
+  "safety": [
+    "Tidak memberi izin apply otomatis",
+    "Backup gagal menghentikan eksekusi",
+    "Import tidak atomik; koneksi putus tidak memicu retry",
+    "Tidak reset atau reboot router"
+  ],
+  "required-input": [
+    "Port anggota bridge"
+  ],
+  "workflow": [
+    "Buka Konfigurasi dan pilih paket",
+    "Baca evidence SSH",
+    "Isi jalur management dan kebutuhan",
+    "Susun apply, rollback, precondition, verifikasi",
+    "Review dan grant router/hash",
+    "Backup export + biner terenkripsi wajib",
+    "Apply dan verifikasi; periksa layanan dari client"
+  ],
+  "recipeId": "bridge"
+}
