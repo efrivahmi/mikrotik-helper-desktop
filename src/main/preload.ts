@@ -16,6 +16,8 @@ const methods = new Set([
   "automation.inspect",
   "automation.evidence",
   "automation.prepare",
+  "automation.check",
+  "standards.source",
   "profile.save",
   "profile.delete",
   "profile.import",

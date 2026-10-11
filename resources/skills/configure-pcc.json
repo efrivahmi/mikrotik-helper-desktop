@@ -1,7 +1,7 @@
 {
   "name": "configure-pcc",
   "title": "PCC multi ISP berbobot",
-  "version": "1.2.0",
+  "version": "1.3.0",
   "mode": "plan-only",
   "purpose": "Connection mark, routing table, pengecualian jaringan lokal, NAT dan route ROS7. Ditolak pada router dengan HotSpot aktif.",
   "domains": [
@@ -30,10 +30,73 @@
     "Buka Konfigurasi dan pilih paket",
     "Baca evidence SSH",
     "Isi jalur management dan kebutuhan",
+    "Periksa aturan dan perbaiki semua pelanggaran",
     "Susun apply, rollback, precondition, verifikasi",
-    "Review dan grant router/hash",
+    "Review, akui peringatan dan grant router/hash",
     "Backup export + biner terenkripsi wajib",
     "Apply dan verifikasi; periksa layanan dari client"
   ],
-  "recipeId": "pcc"
+  "recipeId": "pcc",
+  "standards": {
+    "version": "2026.10.1",
+    "sources": {
+      "mtcna": {
+        "title": "MTCNA — kurikulum dasar",
+        "url": "https://i.mt.lv/cdn/training_pdf/mtcna_outline_2019181161836.pdf",
+        "kind": "Kurikulum"
+      },
+      "cidr": {
+        "title": "RFC 4632 — CIDR",
+        "url": "https://www.rfc-editor.org/info/rfc4632/",
+        "kind": "Standar protokol"
+      },
+      "private": {
+        "title": "RFC 1918 — alamat privat",
+        "url": "https://www.rfc-editor.org/info/rfc1918/",
+        "kind": "Acuan alamat"
+      },
+      "dhcp": {
+        "title": "RFC 2131 — DHCP",
+        "url": "https://www.rfc-editor.org/info/rfc2131/",
+        "kind": "Standar protokol"
+      },
+      "bridge": {
+        "title": "IEEE 802.1Q / implementasi VLAN RouterOS",
+        "url": "https://help.mikrotik.com/docs/spaces/ROS/pages/28606465/Bridge+VLAN+Table",
+        "kind": "Implementasi vendor"
+      },
+      "ieee": {
+        "title": "IEEE 802.1Q-2022 — bridges",
+        "url": "https://1.ieee802.org/maintenance/802-1q-2022-rev/",
+        "kind": "Standar jaringan"
+      },
+      "queues": {
+        "title": "RouterOS — Queue / HTB / PCQ",
+        "url": "https://manual.mikrotik.com/docs/firewall-and-quality-of-service/queues/",
+        "kind": "Implementasi vendor"
+      },
+      "security": {
+        "title": "RouterOS — pengamanan router",
+        "url": "https://help.mikrotik.com/docs/spaces/ROS/pages/328353/Securing+your+router",
+        "kind": "Pedoman vendor"
+      },
+      "wifi": {
+        "title": "RouterOS — WiFi",
+        "url": "https://manual.mikrotik.com/docs/wireless/wifi/",
+        "kind": "Implementasi vendor"
+      },
+      "backup": {
+        "title": "RouterOS — backup",
+        "url": "https://manual.mikrotik.com/docs/getting-started/configuration-management/backup/",
+        "kind": "Implementasi vendor"
+      },
+      "pcc": {
+        "title": "RouterOS — PCC",
+        "url": "https://manual.mikrotik.com/docs/high-availability-solutions/load-balancing/per-connection-classifier/",
+        "kind": "Implementasi vendor"
+      }
+    },
+    "scope": "configuration-delta",
+    "certification": false
+  }
 }

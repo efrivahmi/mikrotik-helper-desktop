@@ -15,6 +15,7 @@ import {
   singletonFields,
 } from "../shared/routeros-literals";
 import type { PlanInput, Router } from "../shared/model";
+import { assessStandards, ipv4Number, ipv4Subnet } from "../shared/standards";
 
 const values = z.record(
   z.string().regex(/^[a-zA-Z][\w.-]*$/),
@@ -48,35 +49,8 @@ export const AutomationRequestSchema = z
     (v) => !!v.recipeId || !!v.operations?.length,
     "Pilih paket atau operasi konfigurasi.",
   );
-export function ipNumber(ip: string) {
-  const parts = ip.split(".");
-  if (
-    parts.length !== 4 ||
-    parts.some((p) => !/^\d{1,3}$/.test(p) || Number(p) > 255)
-  )
-    throw new Error(`Alamat IPv4 tidak valid: ${ip}`);
-  return parts.reduce((n, p) => n * 256 + Number(p), 0);
-}
-export function subnet(cidr: string) {
-  const [ip, prefixText] = cidr.split("/");
-  if (!/^\d{1,2}$/.test(prefixText || ""))
-    throw new Error("Alamat harus mencantumkan prefix CIDR.");
-  const prefix = Number(prefixText);
-  if (prefix > 32) throw new Error("Prefix IPv4 tidak valid.");
-  const n = ipNumber(ip),
-    size = 2 ** (32 - prefix),
-    start = Math.floor(n / size) * size;
-  const dotted = (v: number) =>
-    [24, 16, 8, 0].map((s) => Math.floor(v / 2 ** s) % 256).join(".");
-  return {
-    ip,
-    n,
-    prefix,
-    start,
-    end: start + size - 1,
-    network: `${dotted(start)}/${prefix}`,
-  };
-}
+export const ipNumber = ipv4Number;
+export const subnet = ipv4Subnet;
 const overlaps = (a: ReturnType<typeof subnet>, b: ReturnType<typeof subnet>) =>
   a.start <= b.end && b.start <= a.end;
 const list = (v: unknown) =>
@@ -361,7 +335,12 @@ export function recipeOperations(
       const wan = iface("interface"),
         a = subnet(text(p, "address")),
         g = ipNumber(text(p, "gateway"));
-      if (g <= a.start || g >= a.end || g === a.n)
+      if (
+        (a.prefix <= 30
+          ? g <= a.start || g >= a.end
+          : g < a.start || g > a.end) ||
+        g === a.n
+      )
         throw new Error(
           "Gateway ISP harus berada di subnet WAN dan berbeda dari IP WAN.",
         );
@@ -419,6 +398,8 @@ export function recipeOperations(
         total = ws.reduce((sum, w) => sum + w.weight, 0),
         l = iface("lan"),
         cidr = subnet(text(p, "subnet"));
+      if (ws.some((w) => w.interface === l))
+        throw new Error("Interface LAN dan WAN PCC harus berbeda.");
       if (total > 16) throw new Error("Jumlah bobot PCC maksimal 16.");
       const skip = `${n}-local`;
       const networks = new Set([
@@ -604,6 +585,8 @@ export function recipeOperations(
         mg = subnet(text(p, "management")).network,
         input = `${n}-input`,
         forward = `${n}-forward`;
+      if (wan === l)
+        throw new Error("Interface LAN dan WAN firewall harus berbeda.");
       if (mg !== subnet(request.managementSubnet).network)
         throw new Error(
           "Subnet administrator firewall harus sama dengan jalur management pada formulir.",
@@ -964,6 +947,12 @@ export async function compileAutomation(
   const operations = request.recipeId
     ? recipeOperations(request, e)
     : request.operations || [];
+  const standards = assessStandards(request, e, operations);
+  const violations = standards.findings.filter((f) => f.severity === "error");
+  if (violations.length)
+    throw new Error(
+      `Aturan konfigurasi belum terpenuhi:\n${violations.map((f) => `• ${f.message}`).join("\n")}`,
+    );
   const current = new Map(CONFIG_MODULES.map((m) => [m.id, fields(e, m.id)]));
   const preconditions: PlanInput["preconditions"] = [],
     verify: PlanInput["verify"] = [],
@@ -1368,6 +1357,15 @@ export async function compileAutomation(
       managementInterface: request.managementInterface,
       alternateAccess: request.alternateAccess,
       menus: [...touched],
+      standards,
+      standardsOperations: operations.map((o) => ({
+        moduleId: o.moduleId,
+        action: o.action,
+        selector: o.selector,
+        values: Object.fromEntries(
+          Object.entries(o.values).filter(([key]) => !isSecretField(key)),
+        ),
+      })),
       identityBefore,
       identityAfter,
     },

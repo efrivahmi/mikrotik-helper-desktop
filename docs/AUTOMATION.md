@@ -1,16 +1,16 @@
-# Konfigurasi melalui UI — 1.2.0
+# Konfigurasi melalui UI — 1.3.0
 
 ## Cara memakai
 
 1. Tambahkan koneksi router dan verifikasi host key/identity. Komputer harus memiliki jalur SSH ke perangkat: LAN, VPN atau alamat management yang benar. Router dengan akses MAC saja perlu bootstrap IP/SSH dahulu melalui WinBox atau console.
 2. Buka **Konfigurasi**. Pilih **Paket** untuk formulir terarah, atau **Menu** untuk pengaturan properti RouterOS. Klik **Baca router**; semua pilihan interface/record berasal dari SSH perangkat itu.
-3. Isi nama konfigurasi, interface management, subnet source administrator yang terlihat oleh router, dan kebutuhan jaringan. Konfirmasi akses cadangan hanya bila jalur tersebut memang berfungsi.
+3. Ikuti **Akses router → Isi kebutuhan → Periksa aturan**. Nama konfigurasi dibuat otomatis dan dapat diganti. Pilih interface management serta IP/prefix source administrator yang terlihat oleh router. Konfirmasi akses cadangan hanya bila jalur tersebut memang berfungsi. Bandwidth memakai angka dan pilihan satuan; IP/prefix diisi terpisah.
 4. Pada editor menu, pilih record statis yang unik, pilih tindakan, isi properti, lalu **Tambahkan ke rencana**. Beberapa menu dapat digabung dalam satu rencana. Nilai kosong berarti sengaja mengosongkan properti; properti yang tidak dipilih tidak diubah.
-5. Klik **Siapkan rencana untuk review**. Backend membaca ulang konfigurasi serta nilai lama yang diperlukan untuk rollback. Halaman **Perubahan** menampilkan apply, rollback, precondition dan pemeriksaan target.
-6. Review scope dan ketik grant nama router/hash. Aplikasi membuat backup baru, mengunduh dan memeriksanya, baru mengunggah/import konfigurasi. Backup gagal berarti eksekusi berhenti.
+5. Periksa aturan, perbaiki semua error, lalu klik **Siapkan rencana untuk review**. Backend membaca ulang konfigurasi serta nilai lama yang diperlukan untuk rollback. Halaman **Perubahan** menampilkan apply, rollback, precondition dan pemeriksaan target.
+6. Review scope dan laporan aturan, akui peringatan, lalu ketik grant nama router/hash. Aplikasi membuat backup baru, mengunduh dan memeriksanya, baru mengunggah/import konfigurasi. Backup gagal berarti eksekusi berhenti.
 7. Baca hasil pekerjaan. Periksa layanan dari client: DHCP, DNS, internet, login HotSpot, koneksi radio, laju queue, failover/VPN. Status target cocok menunjukkan pemeriksaan konfigurasi cocok; tidak menyatakan seluruh jaringan telah diuji.
 
-Tidak ada interface, IP, bandwidth, credential atau hasil monitoring contoh yang disimpan sebagai konfigurasi pengguna. Nilai formulir dimasukkan admin atau dimuat dari profil milik admin.
+Tidak ada interface, IP, bandwidth, credential atau hasil monitoring contoh yang disimpan sebagai konfigurasi pengguna. Nilai alamat/interface/credential dimasukkan admin atau dimuat dari profil milik admin. Nilai awal operasional dijelaskan dalam formulir; tombol kandidat DHCP/DNS memakai data yang terbaca. [Acuan dan batas pemeriksaan aturan](STANDARDS.md).
 
 ## Cakupan
 

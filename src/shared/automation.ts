@@ -1087,7 +1087,7 @@ export const RECIPES: readonly Recipe[] = [
     title: "PCQ pembagian bandwidth",
     category: "Bandwidth, PCQ & QoS",
     description:
-      "Classifier IP upload/download dan simple queue dengan plafon total.",
+      "Membagi plafon bandwidth antara IP client yang aktif, dengan classifier upload/download. Batas total diisi sesuai kapasitas ISP.",
     modules: ["queue-type", "simple-queue", "firewall-filter"],
     fields: shaping,
   },

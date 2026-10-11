@@ -23,7 +23,14 @@ import {
   compileAutomation,
   AutomationRequestSchema,
   propertyCommand,
+  recipeOperations,
 } from "./automation";
+import {
+  assessStandards,
+  standardsEvidenceMenus,
+  STANDARDS_VERSION,
+  STANDARD_SOURCES,
+} from "../shared/standards";
 import { routerQuote } from "../shared/routeros-literals";
 import { Store } from "./store";
 import { Session, probe, ConnectionError, connectionError } from "./transport";
@@ -517,7 +524,8 @@ export class Engine {
         "bridge-port",
         "firewall-filter",
         "hotspot-server",
-        ...requested,
+        "dns",
+        ...standardsEvidenceMenus(requested),
       ]),
     ];
     const e: AutomationEvidence = {
@@ -553,6 +561,7 @@ export class Engine {
       files: "/file print detail without-paging",
       packages: "/system package print detail without-paging",
       deviceMode: "/system device-mode print",
+      managementSessions: "/user active print detail without-paging",
     })) {
       try {
         e.data[key] = redact(await session.exec(readCommand(command)));
@@ -574,6 +583,25 @@ export class Engine {
     return this.start(id, "Inventaris konfigurasi", async (s, step) => {
       await this.inspectAutomationWithin(id, moduleIds, s, step);
     });
+  }
+  checkAutomation(input: unknown) {
+    const request = AutomationRequestSchema.parse(input);
+    const evidence = this.store.get<AutomationEvidence>(
+      "automation-evidence",
+      request.evidenceId,
+    );
+    if (
+      !evidence ||
+      evidence.routerId !== request.routerId ||
+      evidence.targetHash !== targetHash(this.store.router(request.routerId))
+    )
+      throw new Error(
+        "Baca router kembali; evidence tidak cocok dengan koneksi ini.",
+      );
+    const operations = request.recipeId
+      ? recipeOperations(request, evidence)
+      : request.operations || [];
+    return assessStandards(request, evidence, operations);
   }
   prepareAutomation(input: unknown, persist: boolean) {
     const request = AutomationRequestSchema.parse(input);
@@ -798,6 +826,12 @@ export class Engine {
       ...new Set([
         ...scriptReview(input.apply, input.secretBindings),
         ...scriptReview(input.rollback, input.secretBindings),
+        ...(input.automation?.standards?.findings.map((f) => f.message) || []),
+        ...(!input.automation?.standards
+          ? [
+              "Rencana script manual/lama belum melalui pemeriksaan aturan konfigurasi. Review teknis tetap diperlukan.",
+            ]
+          : []),
       ]),
     ];
     const plan: Plan = {
@@ -817,7 +851,13 @@ export class Engine {
     );
     return plan;
   }
-  apply(planId: string, hash: string, confirmation: string, rollback = false) {
+  apply(
+    planId: string,
+    hash: string,
+    confirmation: string,
+    rollback = false,
+    acknowledgedRules: string[] = [],
+  ) {
     const plan = this.store.get<Plan>("plan", planId);
     if (!plan) throw new Error("Rencana tidak ditemukan.");
     const router = this.store.router(plan.routerId);
@@ -844,6 +884,29 @@ export class Engine {
       );
     if (confirmation !== `${router.name} / ${hash.slice(0, 8)}`)
       throw new Error("Konfirmasi nama router dan hash tidak cocok.");
+    if (!rollback && plan.automation) {
+      const report = plan.automation.standards;
+      if (
+        !report ||
+        report.version !== STANDARDS_VERSION ||
+        !plan.automation.standardsOperations
+      )
+        throw new Error(
+          "Rencana menggunakan aturan lama. Siapkan ulang konfigurasi dengan versi aturan saat ini.",
+        );
+      if (report.findings.some((f) => f.severity === "error"))
+        throw new Error(
+          "Rencana masih memiliki pelanggaran aturan konfigurasi.",
+        );
+      if (
+        report.findings.some(
+          (f) => f.severity === "warning" && !acknowledgedRules.includes(f.id),
+        )
+      )
+        throw new Error(
+          "Tinjau dan akui seluruh peringatan konfigurasi sebelum memberikan grant.",
+        );
+    }
     if (!rollback && plan.status !== "draft")
       throw new Error(
         "Rencana ini sudah pernah diproses. Periksa state; jangan apply ulang.",
@@ -898,6 +961,49 @@ export class Engine {
                   "Kondisi awal berbeda dari rencana. Ambil snapshot baru dan susun ulang perubahan.",
                 );
             }
+          if (
+            !rollback &&
+            plan.automation?.standardsOperations &&
+            plan.automation.standards
+          ) {
+            step(
+              "Memeriksa aturan konfigurasi terhadap kondisi router terbaru…",
+            );
+            const fresh = await this.inspectAutomationWithin(
+              plan.routerId,
+              plan.automation.standardsOperations.map((o) => o.moduleId),
+              s,
+              step,
+            );
+            const current = assessStandards(
+              {
+                routerId: plan.routerId,
+                evidenceId: fresh.id,
+                name: plan.automation.name,
+                managementSubnet: plan.automation.managementSubnet,
+                managementInterface: plan.automation.managementInterface,
+                alternateAccess: plan.automation.alternateAccess,
+                operations: plan.automation.standardsOperations,
+              },
+              fresh,
+              plan.automation.standardsOperations,
+            );
+            if (
+              current.findings.some(
+                (f) =>
+                  f.severity === "error" ||
+                  !plan.automation!.standards!.findings.some(
+                    (old) =>
+                      old.id === f.id &&
+                      old.message === f.message &&
+                      old.severity === f.severity,
+                  ),
+              )
+            )
+              throw new Error(
+                "Kondisi terbaru menimbulkan pelanggaran/peringatan baru. Susun ulang rencana untuk review.",
+              );
+          }
           const backup = await this.backupWithin(plan.routerId, s, step);
           plan.backupId = backup.id;
           plan.status = rollback ? "rolling-back" : "applying";
@@ -1490,6 +1596,12 @@ export class Engine {
                 m.category.toLowerCase().includes(category),
               ),
               execution: "Draft only; backup + administrator grant required.",
+              standards: {
+                version: STANDARDS_VERSION,
+                sources: STANDARD_SOURCES,
+                scope: "configuration-delta",
+                certification: false,
+              },
             };
           } else if (call.function.name === "inspect_configuration") {
             const m = configModule(args.moduleId);

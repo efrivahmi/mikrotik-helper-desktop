@@ -1,4 +1,4 @@
-import { useEffect, useId, useState, type ReactNode } from "react";
+import { useEffect, useId, useRef, useState, type ReactNode } from "react";
 import {
   ArrowDownToLine,
   FileCode2,
@@ -21,6 +21,20 @@ import {
 import { detailRows } from "../shared/routeros";
 import { singletonFields } from "../shared/routeros-literals";
 import type { AppState, Router } from "../shared/model";
+import {
+  ipv4Subnet,
+  suggestDhcpRange,
+  type StandardsReport,
+} from "../shared/standards";
+import {
+  PROPERTY_LABELS,
+  propertyInput,
+  RECIPE_DEFAULTS,
+  RECIPE_HINTS,
+} from "../shared/config-inputs";
+import { StandardsPanel } from "./StandardsPanel";
+import { RateInput } from "./RateInput";
+import { NetworkInput } from "./NetworkInput";
 const api = window.helper.invoke;
 type Run = (method: string, input?: any, success?: string) => Promise<any>;
 function InputField({
@@ -103,6 +117,12 @@ export function AutomationPage({
     >([]),
     [operations, setOperations] = useState<ConfigOperation[]>([]);
   const [profileName, setProfileName] = useState("");
+  const [step, setStep] = useState(0),
+    [checking, setChecking] = useState(false);
+  const [report, setReport] = useState<StandardsReport | null>(null),
+    [checkedRequest, setCheckedRequest] = useState("");
+  const latestRequest = useRef("");
+  const [advancedProperties, setAdvancedProperties] = useState(false);
   const metadata = state.automationEvidence?.find(
     (e) => e.routerId === router.id,
   );
@@ -116,6 +136,9 @@ export function AutomationPage({
     setManagementInterface("");
     setManagementSubnet("");
     setAlternate(false);
+    setStep(0);
+    setReport(null);
+    setCheckedRequest("");
   }, [router.id]);
   useEffect(() => {
     let active = true;
@@ -153,13 +176,26 @@ export function AutomationPage({
     !!evidence &&
     moduleIds.length > 0 &&
     moduleIds.every((id) => Object.hasOwn(evidence.data, id));
-  const locked = busy || pending;
+  const locked = busy || pending || checking;
   const changeChoice = (id: string) => {
     setChosen(id);
-    setParams({});
+    const next = RECIPES.find((r) => r.id === id);
+    setParams(
+      Object.fromEntries(
+        (next?.fields || [])
+          .filter((f) => RECIPE_DEFAULTS[f.key] !== undefined)
+          .map((f) => [f.key, RECIPE_DEFAULTS[f.key]]),
+      ),
+    );
+    if (!id) setName("");
+    else if (!name || mode === "recipe")
+      setName(`${id.slice(0, 22)}-${Date.now().toString(36).slice(-6)}`);
     setRecord("");
     setProperties([]);
     setError("");
+    setStep(0);
+    setReport(null);
+    setAdvancedProperties(false);
   };
   const request = (): AutomationRequest => ({
     routerId: router.id,
@@ -170,6 +206,132 @@ export function AutomationPage({
     alternateAccess,
     ...(mode === "recipe" ? { recipeId: chosen, params } : { operations }),
   });
+  const fingerprint = JSON.stringify(request());
+  latestRequest.current = fingerprint;
+  const validReport = report && checkedRequest === fingerprint ? report : null;
+  const checkRules = async () => {
+    const source = request(),
+      stamp = JSON.stringify(source);
+    setError("");
+    setChecking(true);
+    setReport(null);
+    try {
+      const result = await api<StandardsReport>("automation.check", source);
+      if (latestRequest.current === stamp) {
+        setReport(result);
+        setCheckedRequest(stamp);
+      }
+    } catch (e) {
+      if (latestRequest.current === stamp)
+        setError(e instanceof Error ? e.message : String(e));
+    } finally {
+      setChecking(false);
+    }
+  };
+  const sessionSources = [
+    ...new Set(
+      detailRows(evidence?.data.managementSessions || "")
+        .filter((r) => r.name === router.user && r.via === "ssh")
+        .map((r) => r.address)
+        .filter((a) => {
+          try {
+            ipv4Subnet(`${a}/32`);
+            return true;
+          } catch {
+            return false;
+          }
+        }),
+    ),
+  ];
+  const endpointInterface = detailRows(evidence?.data["ip-address"] || "").find(
+    (r) => r.address?.split("/")[0] === router.host,
+  )?.interface;
+  const suggestRange = () => {
+    if (!evidence) return;
+    try {
+      const r = suggestDhcpRange(String(params.address || ""), evidence);
+      setParams((p) => ({ ...p, range: `${r.start}-${r.end}` }));
+      setError("");
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+  const propertyValue = (
+    p: { key: string; value: string; old: string },
+    i: number,
+  ) => {
+    const f = propertyInput(module?.id || "", p.key),
+      update = (value: string) =>
+        setProperties((v) => v.map((x, j) => (j === i ? { ...x, value } : x)));
+    if (f.kind === "rate")
+      return (
+        <RateInput
+          label={PROPERTY_LABELS[p.key] || p.key}
+          value={p.value}
+          onChange={update}
+        />
+      );
+    if (
+      f.kind === "rate-pair" ||
+      (p.key === "rate-limit" &&
+        /^\d*(?:\.\d*)?[kMG]?\/\d*(?:\.\d*)?[kMG]?$/.test(p.value || "/"))
+    ) {
+      const [up = "", down = ""] = p.value.split("/");
+      return (
+        <div className="rate-pair">
+          <div>
+            <small>Upload</small>
+            <RateInput
+              label="Upload"
+              value={up}
+              onChange={(v) => update(`${v}/${down}`)}
+            />
+          </div>
+          <div>
+            <small>Download</small>
+            <RateInput
+              label="Download"
+              value={down}
+              onChange={(v) => update(`${up}/${v}`)}
+            />
+          </div>
+        </div>
+      );
+    }
+    if (module?.id === "ip-address" && p.key === "address")
+      return (
+        <NetworkInput
+          label="Alamat interface"
+          value={p.value}
+          onChange={update}
+        />
+      );
+    if (["boolean", "select", "interface"].includes(f.kind))
+      return (
+        <select
+          aria-label="Nilai baru"
+          value={p.value}
+          onChange={(e) => update(e.target.value)}
+        >
+          <option value="">Pilih nilai</option>
+          {(f.kind === "interface" ? interfaces : f.options || []).map((v) => (
+            <option key={v} value={v}>
+              {f.kind === "boolean" ? (v === "yes" ? "Ya" : "Tidak") : v}
+            </option>
+          ))}
+        </select>
+      );
+    return (
+      <input
+        aria-label="Nilai baru"
+        type={f.kind === "secret" ? "password" : "text"}
+        autoComplete="off"
+        placeholder="Nilai baru"
+        value={p.value}
+        onChange={(e) => update(e.target.value)}
+      />
+    );
+  };
   const enqueue = () => {
     if (!module) return;
     const selector =
@@ -234,6 +396,70 @@ export function AutomationPage({
           {f.label}
         </label>
       );
+    if (f.kind === "rate")
+      return (
+        <RateInput
+          label={f.label}
+          value={String(value)}
+          onChange={update}
+          required={f.required}
+        />
+      );
+    if (f.kind === "address" || f.kind === "subnet")
+      return (
+        <NetworkInput
+          label={f.label}
+          value={String(value)}
+          onChange={update}
+          required={f.required}
+          defaultPrefix={f.key === "target" || f.key === "source" ? 32 : 24}
+        />
+      );
+    if (f.key === "range")
+      return (
+        <>
+          <input
+            required={f.required}
+            value={value}
+            onChange={(e) => update(e.target.value)}
+            aria-label="Rentang DHCP"
+          />
+          <button
+            type="button"
+            disabled={
+              locked ||
+              !evidence ||
+              !params.address ||
+              !Object.hasOwn(evidence.data, "dhcp-lease")
+            }
+            onClick={suggestRange}
+          >
+            Hitung kandidat dari subnet
+          </button>
+          <small>
+            Mengecualikan gateway, IP router, lease dan pool yang terbaca.
+            Perangkat dengan IP statis di luar DHCP tetap perlu diperiksa.
+          </small>
+        </>
+      );
+    if (f.key === "dns") {
+      const dns = singletonFields(evidence?.data.dns || ""),
+        observed = dns.servers || dns["dynamic-servers"] || "";
+      return (
+        <>
+          <input
+            required={f.required}
+            value={value}
+            onChange={(e) => update(e.target.value)}
+          />
+          {observed && (
+            <button type="button" onClick={() => update(observed)}>
+              Gunakan DNS router: {observed}
+            </button>
+          )}
+        </>
+      );
+    }
     if (f.kind === "wans")
       return (
         <div className="wan-list">
@@ -299,7 +525,9 @@ export function AutomationPage({
           <button
             type="button"
             disabled={value.length >= 8}
-            onClick={() => update([...(Array.isArray(value) ? value : []), {}])}
+            onClick={() =>
+              update([...(Array.isArray(value) ? value : []), { weight: "1" }])
+            }
           >
             <Plus size={14} />
             Tambah ISP
@@ -468,6 +696,32 @@ export function AutomationPage({
             </button>
           </div>
           <div className="padded">
+            {chosen && (
+              <ol
+                className="configuration-steps"
+                aria-label="Tahap konfigurasi"
+              >
+                {["Akses router", "Isi kebutuhan", "Periksa aturan"].map(
+                  (title, i) => (
+                    <li
+                      key={title}
+                      className={
+                        step === i ? "current" : step > i ? "complete" : ""
+                      }
+                    >
+                      <button
+                        type="button"
+                        disabled={locked || i > step}
+                        onClick={() => setStep(i)}
+                      >
+                        <span>{i + 1}</span>
+                        {title}
+                      </button>
+                    </li>
+                  ),
+                )}
+              </ol>
+            )}
             <div className="panel-note">
               Backup wajib sebelum eksekusi. Apply dan rollback berhenti jika
               backup gagal. Router baru harus sudah dapat diakses lewat SSH/IP
@@ -501,6 +755,34 @@ export function AutomationPage({
               onSubmit={(e) => {
                 e.preventDefault();
                 setError("");
+                if (step === 0) {
+                  try {
+                    ipv4Subnet(managementSubnet);
+                    if (chosen === "firewall-baseline")
+                      setParams((p) => ({
+                        ...p,
+                        management: managementSubnet,
+                      }));
+                    setStep(1);
+                  } catch (error) {
+                    setError(
+                      error instanceof Error ? error.message : String(error),
+                    );
+                  }
+                  return;
+                }
+                if (step === 1) {
+                  setStep(2);
+                  void checkRules();
+                  return;
+                }
+                if (
+                  !validReport ||
+                  validReport.findings.some((f) => f.severity === "error")
+                ) {
+                  void checkRules();
+                  return;
+                }
                 void runRouter(
                   "automation.prepare",
                   { request: request(), persist },
@@ -508,52 +790,76 @@ export function AutomationPage({
                 );
               }}
             >
-              <div className="form-grid">
-                <InputField
-                  label="Nama konfigurasi"
-                  hint="Huruf, angka, _ atau -; 2–31 karakter. Menjadi tag objek AGENT."
-                >
-                  <input
-                    required
-                    pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{1,30}"
-                    value={name}
-                    onChange={(e) => setName(e.target.value)}
-                  />
-                </InputField>
-                <InputField label="Interface jalur management">
-                  <select
-                    required
-                    value={managementInterface}
-                    onChange={(e) => setManagementInterface(e.target.value)}
-                  >
-                    <option value="">Pilih dari router</option>
-                    {interfaces.map((n) => (
-                      <option key={n}>{n}</option>
-                    ))}
-                  </select>
-                </InputField>
-                <InputField
-                  label="Subnet administrator / prefix"
-                  hint="Source administrator yang terlihat oleh router, termasuk bila melalui VPN atau NAT."
-                >
-                  <input
-                    required
-                    value={managementSubnet}
-                    onChange={(e) => setManagementSubnet(e.target.value)}
-                  />
-                </InputField>
-                <InputField label="Akses cadangan">
-                  <label className="inline-check">
-                    <input
-                      type="checkbox"
-                      checked={alternateAccess}
-                      onChange={(e) => setAlternate(e.target.checked)}
-                    />
-                    Saya memiliki jalur management lain yang sudah berfungsi
-                  </label>
-                </InputField>
-              </div>
-              {recipe && (
+              {step === 0 && (
+                <>
+                  <h3>Jalur administrator</h3>
+                  <p className="muted">
+                    Pilih jalur yang dipakai untuk mengakses router. Pengaturan
+                    ini melindungi akses Anda selama perubahan.
+                  </p>
+                  {sessionSources.length === 1 && (
+                    <button
+                      type="button"
+                      disabled={locked}
+                      onClick={() => {
+                        setManagementSubnet(`${sessionSources[0]}/32`);
+                        if (endpointInterface)
+                          setManagementInterface(endpointInterface);
+                      }}
+                    >
+                      Gunakan sumber SSH terbaca: {sessionSources[0]}/32
+                    </button>
+                  )}
+                  <div className="form-grid">
+                    <InputField
+                      label="Nama konfigurasi"
+                      hint="Huruf, angka, _ atau -; 2–31 karakter. Menjadi tag objek AGENT."
+                    >
+                      <input
+                        required
+                        pattern="[a-zA-Z0-9][a-zA-Z0-9_-]{1,30}"
+                        value={name}
+                        onChange={(e) => setName(e.target.value)}
+                      />
+                    </InputField>
+                    <InputField label="Interface jalur management">
+                      <select
+                        required
+                        value={managementInterface}
+                        onChange={(e) => setManagementInterface(e.target.value)}
+                      >
+                        <option value="">Pilih dari router</option>
+                        {interfaces.map((n) => (
+                          <option key={n}>{n}</option>
+                        ))}
+                      </select>
+                    </InputField>
+                    <InputField
+                      label="IP sumber administrator / prefix"
+                      hint="Source administrator yang terlihat oleh router, termasuk bila melalui VPN atau NAT."
+                    >
+                      <NetworkInput
+                        required
+                        label="Alamat administrator"
+                        value={managementSubnet}
+                        onChange={setManagementSubnet}
+                        defaultPrefix={32}
+                      />
+                    </InputField>
+                    <InputField label="Akses cadangan">
+                      <label className="inline-check">
+                        <input
+                          type="checkbox"
+                          checked={alternateAccess}
+                          onChange={(e) => setAlternate(e.target.checked)}
+                        />
+                        Saya memiliki jalur management lain yang sudah berfungsi
+                      </label>
+                    </InputField>
+                  </div>
+                </>
+              )}
+              {step === 1 && recipe && (
                 <div className="form-grid automation-params">
                   {recipe.fields.map((f) => (
                     <InputField
@@ -561,20 +867,20 @@ export function AutomationPage({
                       label={
                         f.kind === "boolean" ? "Persetujuan terkait" : f.label
                       }
-                      hint={f.hint}
+                      hint={f.hint || RECIPE_HINTS[f.key]}
                     >
                       {input(f)}
                     </InputField>
                   ))}
                 </div>
               )}
-              {module?.readOnly && (
+              {step === 1 && module?.readOnly && (
                 <div className="notice">
                   Menu ini tersedia untuk pembacaan. Perubahan User Manager
                   memerlukan backup database khusus di luar backup sistem.
                 </div>
               )}
-              {module && !module.readOnly && (
+              {step === 1 && module && !module.readOnly && (
                 <div className="automation-menu">
                   <div className="form-grid">
                     <InputField label="Tindakan">
@@ -650,61 +956,102 @@ export function AutomationPage({
                   {["set", "add"].includes(action) && (
                     <>
                       <h3>Properti yang akan diubah</h3>
+                      <label className="inline-check">
+                        <input
+                          type="checkbox"
+                          checked={advancedProperties}
+                          onChange={(e) =>
+                            setAdvancedProperties(e.target.checked)
+                          }
+                        />
+                        Tulis nama properti RouterOS secara manual
+                      </label>
                       {properties.map((p, i) => (
-                        <div className="property-entry" key={i}>
-                          <input
-                            aria-label="Nama properti"
-                            list="automation-properties"
-                            placeholder="Properti RouterOS"
-                            value={p.key}
-                            onChange={(e) =>
-                              setProperties((v) =>
-                                v.map((x, j) =>
-                                  j === i ? { ...x, key: e.target.value } : x,
-                                ),
-                              )
-                            }
-                          />
-                          <input
-                            aria-label="Nilai baru"
-                            type={isSecretField(p.key) ? "password" : "text"}
-                            autoComplete="off"
-                            placeholder="Nilai baru"
-                            value={p.value}
-                            onChange={(e) =>
-                              setProperties((v) =>
-                                v.map((x, j) =>
-                                  j === i ? { ...x, value: e.target.value } : x,
-                                ),
-                              )
-                            }
-                          />
-                          {isSecretField(p.key) && action !== "add" && (
-                            <input
-                              aria-label="Credential lama untuk rollback"
-                              type="password"
-                              autoComplete="off"
-                              placeholder="Credential lama bila tersembunyi"
-                              value={p.old}
-                              onChange={(e) =>
+                        <div className="property-block" key={i}>
+                          <div className="property-entry">
+                            {advancedProperties ? (
+                              <input
+                                aria-label="Nama properti"
+                                list="automation-properties"
+                                placeholder="Properti RouterOS"
+                                value={p.key}
+                                onChange={(e) =>
+                                  setProperties((v) =>
+                                    v.map((x, j) =>
+                                      j === i
+                                        ? { ...x, key: e.target.value }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                            ) : (
+                              <select
+                                aria-label="Properti yang diubah"
+                                value={p.key}
+                                onChange={(e) =>
+                                  setProperties((v) =>
+                                    v.map((x, j) =>
+                                      j === i
+                                        ? {
+                                            ...x,
+                                            key: e.target.value,
+                                            value: "",
+                                            old: "",
+                                          }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              >
+                                <option value="">Pilih pengaturan</option>
+                                {module.fields.map((k) => (
+                                  <option key={k} value={k}>
+                                    {PROPERTY_LABELS[k] || k} ({k})
+                                  </option>
+                                ))}
+                                {p.key && !module.fields.includes(p.key) && (
+                                  <option value={p.key}>{p.key}</option>
+                                )}
+                              </select>
+                            )}
+                            {propertyValue(p, i)}
+                            {isSecretField(p.key) && action !== "add" && (
+                              <input
+                                aria-label="Credential lama untuk rollback"
+                                type="password"
+                                autoComplete="off"
+                                placeholder="Credential lama bila tersembunyi"
+                                value={p.old}
+                                onChange={(e) =>
+                                  setProperties((v) =>
+                                    v.map((x, j) =>
+                                      j === i
+                                        ? { ...x, old: e.target.value }
+                                        : x,
+                                    ),
+                                  )
+                                }
+                              />
+                            )}
+                            <button
+                              className="icon"
+                              type="button"
+                              aria-label="Hapus properti"
+                              onClick={() =>
                                 setProperties((v) =>
-                                  v.map((x, j) =>
-                                    j === i ? { ...x, old: e.target.value } : x,
-                                  ),
+                                  v.filter((_, j) => j !== i),
                                 )
                               }
-                            />
+                            >
+                              <Trash2 size={15} />
+                            </button>
+                          </div>
+                          {propertyInput(module.id, p.key).hint && (
+                            <small className="muted">
+                              {propertyInput(module.id, p.key).hint}
+                            </small>
                           )}
-                          <button
-                            className="icon"
-                            type="button"
-                            aria-label="Hapus properti"
-                            onClick={() =>
-                              setProperties((v) => v.filter((_, j) => j !== i))
-                            }
-                          >
-                            <Trash2 size={15} />
-                          </button>
                         </div>
                       ))}
                       <datalist id="automation-properties">
@@ -743,7 +1090,7 @@ export function AutomationPage({
                   </div>
                 </div>
               )}
-              {mode === "menu" && operations.length > 0 && (
+              {step > 0 && mode === "menu" && operations.length > 0 && (
                 <div className="operation-list">
                   <h3>Operasi dalam rencana ({operations.length})</h3>
                   {operations.map((o, i) => (
@@ -769,27 +1116,98 @@ export function AutomationPage({
                   ))}
                 </div>
               )}
-              <label className="inline-check">
-                <input
-                  type="checkbox"
-                  disabled={!state.secureStorage}
-                  checked={persist}
-                  onChange={(e) => setPersist(e.target.checked)}
-                />
-                Simpan credential rencana di keyring agar tersedia setelah
-                aplikasi ditutup
-              </label>
-              <p className="muted">
-                Tanpa keyring, credential berlaku sampai aplikasi ditutup.
-                Profil yang diekspor tidak menyertakan password. Pemeriksaan
-                konfigurasi tidak menggantikan uji layanan dari client.
-              </p>
+              {step === 2 && (
+                <>
+                  <h3>Ringkasan kebutuhan</h3>
+                  <dl className="configuration-summary">
+                    <dt>Router</dt>
+                    <dd>
+                      {router.name} · {evidence?.identity || "belum terbaca"}
+                    </dd>
+                    <dt>Konfigurasi</dt>
+                    <dd>
+                      {recipe?.title || `${operations.length} operasi menu`} ·{" "}
+                      {name}
+                    </dd>
+                    <dt>Akses administrator</dt>
+                    <dd>
+                      {managementInterface} · {managementSubnet}
+                    </dd>
+                  </dl>
+                  {recipe && (
+                    <dl className="configuration-summary">
+                      {recipe.fields
+                        .filter((f) => f.kind !== "secret")
+                        .map((f) => (
+                          <div key={f.key}>
+                            <dt>{f.label}</dt>
+                            <dd>
+                              {f.kind === "boolean"
+                                ? params[f.key]
+                                  ? "Ya"
+                                  : "Tidak"
+                                : Array.isArray(params[f.key])
+                                  ? params[f.key]
+                                      .map((x: any) =>
+                                        typeof x === "object"
+                                          ? `${x.interface || ""} · ${x.gateway || ""} · bobot ${x.weight || ""}`
+                                          : x,
+                                      )
+                                      .join("; ")
+                                  : String(params[f.key] || "—")}
+                            </dd>
+                          </div>
+                        ))}
+                    </dl>
+                  )}
+                  <button
+                    type="button"
+                    disabled={locked || !capable}
+                    onClick={() => void checkRules()}
+                  >
+                    {checking ? "Memeriksa…" : "Periksa ulang aturan"}
+                  </button>
+                  {validReport && <StandardsPanel report={validReport} />}
+                  <p className="muted">
+                    Pemeriksaan awal memakai pembacaan router di atas. Saat
+                    rencana disusun dan sebelum eksekusi, backend membaca
+                    kembali kondisi router.
+                  </p>
+                  <label className="inline-check">
+                    <input
+                      type="checkbox"
+                      disabled={!state.secureStorage}
+                      checked={persist}
+                      onChange={(e) => setPersist(e.target.checked)}
+                    />
+                    Simpan credential rencana di keyring agar tersedia setelah
+                    aplikasi ditutup
+                  </label>
+                  <p className="muted">
+                    Tanpa keyring, credential berlaku sampai aplikasi ditutup.
+                    Profil yang diekspor tidak menyertakan password. Pemeriksaan
+                    konfigurasi tidak menggantikan uji layanan dari client.
+                  </p>
+                </>
+              )}
               {error && (
                 <div className="notice error" role="alert">
                   {error}
                 </div>
               )}
               <div className="automation-actions">
+                {step > 0 && (
+                  <button
+                    type="button"
+                    disabled={locked}
+                    onClick={() => {
+                      setStep(step - 1);
+                      setError("");
+                    }}
+                  >
+                    Kembali
+                  </button>
+                )}
                 <button
                   className="primary"
                   disabled={
@@ -798,11 +1216,20 @@ export function AutomationPage({
                     !name ||
                     !managementSubnet ||
                     !managementInterface ||
-                    (mode === "menu" && !operations.length)
+                    (step > 0 && mode === "menu" && !operations.length) ||
+                    (step === 2 &&
+                      (!validReport ||
+                        validReport.findings.some(
+                          (f) => f.severity === "error",
+                        )))
                   }
                 >
                   <FileCode2 size={16} />
-                  Siapkan rencana untuk review
+                  {step === 0
+                    ? "Lanjut isi kebutuhan"
+                    : step === 1
+                      ? "Periksa aturan"
+                      : "Siapkan rencana untuk review"}
                 </button>
               </div>
             </form>
@@ -873,6 +1300,9 @@ export function AutomationPage({
                     setManagementInterface(r.managementInterface);
                     setManagementSubnet(r.managementSubnet);
                     setAlternate(false);
+                    setStep(0);
+                    setReport(null);
+                    setCheckedRequest("");
                     setProperties([]);
                     setRecord("");
                     setError(

@@ -53,6 +53,7 @@ import type {
 } from "../shared/model";
 import { detailRows } from "../shared/routeros";
 import { AutomationPage } from "./AutomationPage";
+import { StandardsPanel } from "./StandardsPanel";
 
 const api = window.helper.invoke;
 const connectionLabels: Record<ConnectionState["status"], string> = {
@@ -1680,6 +1681,9 @@ export function App() {
                       </div>
                       <div className="padded">
                         <p>{plan.reason}</p>
+                        {plan.automation?.standards && (
+                          <StandardsPanel report={plan.automation.standards} />
+                        )}
                         <div className="script-grid">
                           <div>
                             <h3>Apply</h3>
@@ -2184,13 +2188,14 @@ export function App() {
           router={router}
           pending={pending}
           onClose={() => setGrant(null)}
-          onConfirm={async (confirmation) => {
+          onConfirm={async (confirmation, acknowledgedRules) => {
             const job = await run(
               "plan.apply",
               {
                 id: grant.plan.id,
                 hash: grant.plan.hash,
                 confirmation,
+                acknowledgedRules,
                 rollback: grant.rollback,
               },
               "Persetujuan diterima. Backup sedang dibuat sebelum import.",
@@ -2681,9 +2686,14 @@ function Grant({
   rollback: boolean;
   pending: boolean;
   onClose: () => void;
-  onConfirm: (text: string) => Promise<void>;
+  onConfirm: (text: string, acknowledgedRules: string[]) => Promise<void>;
 }) {
   const [text, setText] = useState("");
+  const [acceptedWarnings, setAcceptedWarnings] = useState(false);
+  const warnings =
+    plan.automation?.standards?.findings.filter(
+      (f) => f.severity === "warning",
+    ) || [];
   const phrase = `${router.name} / ${plan.hash.slice(0, 8)}`;
   return (
     <Modal
@@ -2702,6 +2712,9 @@ function Grant({
         <Badge tone="warn">Mengubah konfigurasi</Badge>
       </div>
       <p>{plan.reason}</p>
+      {plan.automation?.standards && (
+        <StandardsPanel report={plan.automation.standards} />
+      )}
       <pre className="script grant-script">
         {rollback ? plan.rollback : plan.apply}
       </pre>
@@ -2711,6 +2724,17 @@ function Grant({
         selesai sebagian jika koneksi putus; aplikasi tidak mengulangnya
         otomatis. Verifikasi dilakukan sesudah import.
       </div>
+      {!rollback && warnings.length > 0 && (
+        <label className="inline-check grant-warning-check">
+          <input
+            type="checkbox"
+            checked={acceptedWarnings}
+            onChange={(e) => setAcceptedWarnings(e.target.checked)}
+          />
+          Saya sudah meninjau {warnings.length} peringatan konfigurasi dan
+          menyetujui scope perubahan ini.
+        </label>
+      )}
       <Field
         label={`Ketik persis: ${phrase}`}
         hint="Konfirmasi ini hanya berlaku untuk router dan isi rencana yang ditampilkan."
@@ -2725,8 +2749,19 @@ function Grant({
         <button onClick={onClose}>Batal</button>
         <button
           className="danger"
-          disabled={text !== phrase || pending}
-          onClick={() => void onConfirm(text)}
+          disabled={
+            text !== phrase ||
+            pending ||
+            (!rollback && warnings.length > 0 && !acceptedWarnings)
+          }
+          onClick={() =>
+            void onConfirm(
+              text,
+              !rollback && acceptedWarnings
+                ? [...new Set(warnings.map((f) => f.id))]
+                : [],
+            )
+          }
         >
           {rollback ? <Undo2 size={16} /> : <Check size={16} />}Setujui{" "}
           {rollback ? "rollback" : "& terapkan"}

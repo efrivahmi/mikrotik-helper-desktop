@@ -15,6 +15,7 @@ import { Store } from "./store";
 import { Engine, type Vault } from "./engine";
 import { modelEndpoint } from "./model-client";
 import { AutomationRequestSchema } from "./automation";
+import { STANDARD_SOURCES } from "../shared/standards";
 import {
   isSecretField,
   type AutomationRequest,
@@ -188,6 +189,19 @@ async function create() {
       .parse(p);
     return engine.prepareAutomation(v.request, v.persist);
   });
+  handle("automation.check", (p) => engine.checkAutomation(p));
+  handle("standards.source", async (p) => {
+    const key = z
+      .enum(
+        Object.keys(STANDARD_SOURCES) as [
+          keyof typeof STANDARD_SOURCES,
+          ...Array<keyof typeof STANDARD_SOURCES>,
+        ],
+      )
+      .parse(p);
+    await shell.openExternal(STANDARD_SOURCES[key].url);
+    return true;
+  });
   const scrubProfile = (
     request: AutomationRequest,
   ): DeploymentProfile["request"] => {
@@ -305,9 +319,16 @@ async function create() {
         hash: z.string(),
         confirmation: z.string(),
         rollback: z.boolean().default(false),
+        acknowledgedRules: z.array(z.string().max(120)).max(1000).default([]),
       })
       .parse(p);
-    return engine.apply(v.id, v.hash, v.confirmation, v.rollback);
+    return engine.apply(
+      v.id,
+      v.hash,
+      v.confirmation,
+      v.rollback,
+      v.acknowledgedRules,
+    );
   });
   handle("plan.export", async (p) => {
     const plan = store.get<Plan>("plan", uuid.parse(p));

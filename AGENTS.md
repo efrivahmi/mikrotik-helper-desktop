@@ -7,4 +7,5 @@
 - Gunakan evidence asli. Jangan menyimpan data contoh sebagai inventory, telemetry atau hasil koneksi pengguna. Ketiadaan koneksi/hardware/package harus terlihat sebagai belum tersedia atau error yang nyata.
 - Credential tetap terpisah dari script review, profile reusable, laporan dan Git. Jangan menampilkan token/private key/password. Keyring basic_text tidak boleh dipakai untuk persistence.
 - Source helper Python dan data operasional lama harus dipertahankan. Kedua repo milik pemilik harus tetap private. Backup full workspace bercredential hanya sesuai otorisasi pemilik yang sudah ada; tidak masuk source Git.
+- Aturan paket/editor satuan berada di src/shared/standards.ts; baca docs/STANDARDS.md. Pelanggaran menghentikan compiler, peringatan terikat hash/grant dan kondisi terbaru diperiksa ulang sebelum backup/import. Perubahan aturan menaikkan STANDARDS_VERSION; jangan memberi klaim sertifikasi MTCNA/IEEE/RFC atau audit jaringan penuh.
 - Build/typecheck tidak membuktikan layanan RouterOS berjalan. Catat status verifikasi jujur; jangan mengklaim semua WinBox/hardware telah didukung atau produksi telah lulus tanpa bukti.

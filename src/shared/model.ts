@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AutomationEvidence, AutomationRequest } from "./automation";
+import { StandardsReportSchema } from "./standards";
 
 export const RouterSchema = z.object({
   id: z.string().uuid().optional(),
@@ -69,6 +70,18 @@ export const PlanInputSchema = z.object({
       menus: z.array(z.string()),
       identityBefore: z.string().optional(),
       identityAfter: z.string().optional(),
+      standards: StandardsReportSchema.optional(),
+      standardsOperations: z
+        .array(
+          z.object({
+            moduleId: z.string(),
+            action: z.enum(["add", "set", "remove", "enable", "disable"]),
+            selector: z.record(z.string(), z.string()),
+            values: z.record(z.string(), z.string()),
+          }),
+        )
+        .max(64)
+        .optional(),
     })
     .optional(),
 });

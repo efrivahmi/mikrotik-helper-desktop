@@ -6,6 +6,7 @@ import { CONFIG_MODULES, isSecretField } from "../shared/automation";
 export const MENUS = [
   ...new Set([
     "system identity",
+    "user active",
     "system resource",
     "system routerboard",
     "system package",
