@@ -1,7 +1,7 @@
 {
   "name": "inspect-ospf-interface",
   "title": "Periksa OSPF interface template",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi OSPF interface template langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "inspect-graphing-queue",
   "title": "Periksa Grafik queue",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Grafik queue langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

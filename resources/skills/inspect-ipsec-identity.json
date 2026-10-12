@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipsec-identity",
   "title": "Periksa IPsec identity",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi IPsec identity langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

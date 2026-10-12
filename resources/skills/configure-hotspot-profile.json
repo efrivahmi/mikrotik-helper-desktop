@@ -1,7 +1,7 @@
 {
   "name": "configure-hotspot-profile",
   "title": "Profil bandwidth HotSpot baru",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Profil baru; profil serta sesi yang sudah aktif tidak diubah.",
   "domains": [

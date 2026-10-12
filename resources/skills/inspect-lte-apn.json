@@ -1,7 +1,7 @@
 {
   "name": "inspect-lte-apn",
   "title": "Periksa Profil APN LTE",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Profil APN LTE langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

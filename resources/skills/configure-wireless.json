@@ -1,7 +1,7 @@
 {
   "name": "configure-wireless",
   "title": "WiFi legacy WPA2",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Security profile WPA2 dan SSID AP untuk paket wireless legacy.",
   "domains": [

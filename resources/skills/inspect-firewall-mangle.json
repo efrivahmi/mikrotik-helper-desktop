@@ -1,7 +1,7 @@
 {
   "name": "inspect-firewall-mangle",
   "title": "Periksa Mangle / PCC / packet marking",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Mangle / PCC / packet marking langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

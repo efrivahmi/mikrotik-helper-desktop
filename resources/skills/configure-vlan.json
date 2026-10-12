@@ -1,7 +1,7 @@
 {
   "name": "configure-vlan",
   "title": "Buat interface VLAN",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "VLAN bertag pada parent yang dipilih.",
   "domains": [

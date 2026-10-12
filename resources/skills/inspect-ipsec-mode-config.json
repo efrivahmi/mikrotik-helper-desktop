@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipsec-mode-config",
   "title": "Periksa IPsec mode config",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi IPsec mode config langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

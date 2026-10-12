@@ -106,6 +106,12 @@ export function ConnectionGuidePage({
         </button>
       </div>
       <div className="padded">
+        {!state.routers.length && (
+          <p className="muted">
+            Belum ada router tersimpan. Siapkan koneksi di bawah, lalu tambahkan
+            perangkat pada langkah Akun aplikasi. Router tidak diimpor otomatis.
+          </p>
+        )}
         <ol className="configuration-steps quick-steps">
           {phases.map((p, i) => (
             <li

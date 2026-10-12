@@ -1,7 +1,7 @@
 {
   "name": "inspect-bridge",
   "title": "Periksa Bridge / switching",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Bridge / switching langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

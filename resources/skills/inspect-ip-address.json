@@ -1,7 +1,7 @@
 {
   "name": "inspect-ip-address",
   "title": "Periksa Alamat IP / management",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Alamat IP / management langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

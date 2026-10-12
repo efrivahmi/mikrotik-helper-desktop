@@ -1,7 +1,7 @@
 {
   "name": "inspect-wifi-security",
   "title": "Periksa Security WPA2/WPA3",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Security WPA2/WPA3 langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "inspect-dhcp-server",
   "title": "Periksa DHCP server",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi DHCP server langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

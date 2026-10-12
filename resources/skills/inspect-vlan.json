@@ -1,7 +1,7 @@
 {
   "name": "inspect-vlan",
   "title": "Periksa Interface VLAN",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Interface VLAN langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "inspect-wireless-connect-list",
   "title": "Periksa Connect list wireless",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Connect list wireless langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

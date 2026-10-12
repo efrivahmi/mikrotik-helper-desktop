@@ -1,7 +1,7 @@
 {
   "name": "inspect-hotspot-ip-binding",
   "title": "Periksa HotSpot IP binding",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi HotSpot IP binding langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

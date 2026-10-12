@@ -9,6 +9,8 @@ import { redact } from "./policy";
 export class Store {
   db: DatabaseSync;
   constructor(public dir: string) {
+    // Workspace baru tidak memiliki inventory atau evidence. Router hanya
+    // ditambahkan lewat tindakan simpan/impor yang dipilih pengguna.
     mkdirSync(dir, { recursive: true, mode: 0o700 });
     this.db = new DatabaseSync(join(dir, "helper.sqlite"));
     this.db.exec(

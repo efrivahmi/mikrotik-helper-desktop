@@ -1,7 +1,7 @@
 {
   "name": "inspect-wifi-configuration",
   "title": "Periksa Profil WiFi modern",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Profil WiFi modern langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "inspect-routing-table",
   "title": "Periksa Routing table",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Routing table langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "configure-pcc",
   "title": "PCC multi ISP berbobot",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Connection mark, routing table, pengecualian jaringan lokal, NAT dan route ROS7. Ditolak pada router dengan HotSpot aktif.",
   "domains": [

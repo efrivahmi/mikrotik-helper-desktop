@@ -1,7 +1,7 @@
 {
   "name": "inspect-ethernet",
   "title": "Periksa Ethernet",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Ethernet langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

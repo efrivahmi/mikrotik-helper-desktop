@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipv6-address-list",
   "title": "Periksa Address list IPv6",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Address list IPv6 langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

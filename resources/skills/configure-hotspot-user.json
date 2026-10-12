@@ -1,7 +1,7 @@
 {
   "name": "configure-hotspot-user",
   "title": "User / voucher HotSpot",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Akun HotSpot baru dengan profil dan batas uptime yang dipilih.",
   "domains": [

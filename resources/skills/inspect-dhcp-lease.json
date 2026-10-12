@@ -1,7 +1,7 @@
 {
   "name": "inspect-dhcp-lease",
   "title": "Periksa Reservasi DHCP",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Reservasi DHCP langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

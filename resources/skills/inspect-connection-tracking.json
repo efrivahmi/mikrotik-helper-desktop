@@ -1,7 +1,7 @@
 {
   "name": "inspect-connection-tracking",
   "title": "Periksa Connection tracking",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Connection tracking langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

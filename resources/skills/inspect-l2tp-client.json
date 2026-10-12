@@ -1,7 +1,7 @@
 {
   "name": "inspect-l2tp-client",
   "title": "Periksa L2TP client",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi L2TP client langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

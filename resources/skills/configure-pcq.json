@@ -1,7 +1,7 @@
 {
   "name": "configure-pcq",
   "title": "PCQ pembagian bandwidth",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Membagi plafon bandwidth antara IP client yang aktif, dengan classifier upload/download. Batas total diisi sesuai kapasitas ISP.",
   "domains": [

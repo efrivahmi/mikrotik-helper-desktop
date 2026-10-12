@@ -1,7 +1,7 @@
 {
   "name": "inspect-interface-list-member",
   "title": "Periksa Anggota daftar interface",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Anggota daftar interface langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "configure-hotspot",
   "title": "HotSpot + DHCP + profil user",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "HotSpot baru pada interface khusus; portal lama dan sesi user lain dipertahankan.",
   "domains": [

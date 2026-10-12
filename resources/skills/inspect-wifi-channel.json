@@ -1,7 +1,7 @@
 {
   "name": "inspect-wifi-channel",
   "title": "Periksa Channel WiFi",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Channel WiFi langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

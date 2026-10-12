@@ -1,7 +1,7 @@
 {
   "name": "configure-dhcp-reservation",
   "title": "Reservasi DHCP",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Lease statis MAC/IP; tidak me-renew atau menghapus sesi pengguna.",
   "domains": [

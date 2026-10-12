@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipsec-proposal",
   "title": "Periksa IPsec proposal",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi IPsec proposal langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "configure-wifi",
   "title": "WiFi modern WPA2/WPA3",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Profil keamanan dan SSID baru lalu diterapkan pada radio WiFi yang dipilih.",
   "domains": [

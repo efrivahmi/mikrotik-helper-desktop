@@ -327,6 +327,7 @@ export function App() {
   const [fatal, setFatal] = useState("");
   const chatEnd = useRef<HTMLDivElement>(null);
   const activeJobs = useRef(new Set<string>());
+  const startupViewSet = useRef(false);
   const refresh = useCallback(async () => {
     try {
       const data = await api<AppState>("state", selected || undefined);
@@ -360,12 +361,18 @@ export function App() {
     };
   }, [selectedJob?.id]);
   useEffect(() => {
+    if (!state || startupViewSet.current) return;
+    startupViewSet.current = true;
+    if (!state.routers.length) setView("connection");
+  }, [state]);
+  useEffect(() => {
     if (state && !state.routers.some((r) => r.id === selected)) {
       setSelected(state.routers[0]?.id || "");
     }
   }, [state, selected]);
   useEffect(() => {
-    localStorage.setItem("selectedRouter", selected);
+    if (selected) localStorage.setItem("selectedRouter", selected);
+    else localStorage.removeItem("selectedRouter");
     setAuto(false);
   }, [selected]);
   useEffect(() => {
@@ -611,6 +618,7 @@ export function App() {
             <select
               aria-label="Router aktif"
               value={selected}
+              disabled={!state.routers.length}
               onChange={(e) => setSelected(e.target.value)}
             >
               {!state.routers.length && (
@@ -2511,7 +2519,7 @@ function RouterForm({
           <input
             value={r.expectedIdentity}
             onChange={(e) => field("expectedIdentity", e.target.value)}
-            placeholder="Contoh: Invada"
+            placeholder="Identity perangkat di System → Identity"
           />
         </Field>
         <label className="inline-check">
@@ -3022,6 +3030,11 @@ function SettingsPage({
             <p>
               Inventory, snapshot, skill, rencana, dan riwayat disimpan dalam
               SQLite pada komputer ini.
+            </p>
+            <p>
+              Instalasi baru dimulai tanpa router. Koneksi hanya ditambahkan
+              melalui Tambah router atau impor yang Anda pilih, lalu tetap
+              tersimpan saat aplikasi dibuka kembali.
             </p>
             <code className="path">{dataDir}</code>
             <button onClick={() => void run("data.open")}>

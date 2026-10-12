@@ -1,7 +1,7 @@
 {
   "name": "configure-lan-dhcp",
   "title": "LAN + DHCP server",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "IP gateway, pool, subnet DHCP dan server pada interface khusus.",
   "domains": [

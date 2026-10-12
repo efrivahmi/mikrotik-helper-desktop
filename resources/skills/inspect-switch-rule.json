@@ -1,7 +1,7 @@
 {
   "name": "inspect-switch-rule",
   "title": "Periksa ACL chip switch",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi ACL chip switch langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

@@ -2,6 +2,10 @@
 
 ## Router baru
 
+Pada workspace baru, daftar router, host key, credential, snapshot dan hasil koneksi kosong. Aplikasi membuka **Panduan koneksi**. Skill bawaan tersedia tanpa menambahkan perangkat atau menyambungkan SSH. Formulir nama/IP/user/key/password tidak mengambil data pribadi pengembang.
+
+Router hanya dibuat melalui **Tambah router** atau **Impor helper lama** yang dipilih pengguna. Setelah disimpan, koneksi dan evidence lokal tetap tersedia pada startup berikutnya; upgrade/installer memakai workspace yang sudah ada. Data yang terlihat di komputer asal dapat berasal dari impor lokal sebelumnya, bukan data bawaan paket. Tombol Hubungkan atau pemeriksaan yang Anda jalankan memulai akses jaringan; membuka halaman/polling UI tidak menghubungkan router otomatis.
+
 Tambahkan nama, site, host, port SSH, username, dan metode autentikasi. SSH key disarankan mengikuti helper lama. Untuk RouterOS 6 yang memakai host key RSA lama, aktifkan kompatibilitas RSA. Expected identity bersifat opsional; saat diisi, setiap pekerjaan berhenti jika nama perangkat berbeda.
 
 Tekan Hubungkan dan cocokkan fingerprint melalui jalur tepercaya. Fingerprint yang sudah dipercaya dipakai pada setiap sambungan. Perubahan IP/port menghapus trust sehingga perlu probe ulang. Mengubah target koneksi juga membuat rencana lama tidak dapat diterapkan.

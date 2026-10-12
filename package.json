@@ -1,7 +1,7 @@
 {
   "name": "mikrotik-helper-desktop",
   "productName": "MikroTik Helper",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Desktop console for evidence-based MikroTik operations",
   "author": "MikroTik Helper Workspace",
   "license": "UNLICENSED",

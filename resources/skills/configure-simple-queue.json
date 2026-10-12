@@ -1,7 +1,7 @@
 {
   "name": "configure-simple-queue",
   "title": "Batas bandwidth IP / subnet",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "plan-only",
   "purpose": "Simple queue terarah tanpa mengubah profil user lain.",
   "domains": [

@@ -1,7 +1,7 @@
 {
   "name": "inspect-ip-pool",
   "title": "Periksa Pool alamat IPv4",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Pool alamat IPv4 langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

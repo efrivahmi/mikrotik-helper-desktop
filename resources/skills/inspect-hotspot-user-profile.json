@@ -1,7 +1,7 @@
 {
   "name": "inspect-hotspot-user-profile",
   "title": "Periksa Profil user / bandwidth HotSpot",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Profil user / bandwidth HotSpot langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

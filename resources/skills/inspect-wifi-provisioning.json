@@ -1,7 +1,7 @@
 {
   "name": "inspect-wifi-provisioning",
   "title": "Periksa Provisioning WiFi CAPsMAN",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Provisioning WiFi CAPsMAN langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [
