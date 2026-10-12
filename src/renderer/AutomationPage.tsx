@@ -1285,51 +1285,55 @@ export function AutomationPage({
                 Simpan profil
               </button>
             </div>
-            {(state.deploymentProfiles || []).map((p) => (
-              <div className="profile-entry" key={p.id}>
-                <strong>{p.name}</strong>
-                <button
-                  disabled={locked}
-                  onClick={() => {
-                    const r = p.request;
-                    setMode(r.recipeId ? "recipe" : "menu");
-                    setChosen(r.recipeId || r.operations?.[0]?.moduleId || "");
-                    setName(r.name);
-                    setParams(r.params || {});
-                    setOperations(r.operations || []);
-                    setManagementInterface(r.managementInterface);
-                    setManagementSubnet(r.managementSubnet);
-                    setAlternate(false);
-                    setStep(0);
-                    setReport(null);
-                    setCheckedRequest("");
-                    setProperties([]);
-                    setRecord("");
-                    setError(
-                      "Profil dimuat. Baca router dan periksa alamat/interface serta isi ulang credential.",
-                    );
-                  }}
-                >
-                  Gunakan
-                </button>
-                <button
-                  onClick={() =>
-                    void run("profile.export", p.id, "Profil diekspor.")
-                  }
-                >
-                  Ekspor
-                </button>
-                <button
-                  className="icon"
-                  aria-label="Hapus profil"
-                  onClick={() =>
-                    void run("profile.delete", p.id, "Profil dihapus.")
-                  }
-                >
-                  <Trash2 size={15} />
-                </button>
-              </div>
-            ))}
+            {(state.deploymentProfiles || [])
+              .filter((p) => !p.request.quick)
+              .map((p) => (
+                <div className="profile-entry" key={p.id}>
+                  <strong>{p.name}</strong>
+                  <button
+                    disabled={locked}
+                    onClick={() => {
+                      const r = p.request;
+                      setMode(r.recipeId ? "recipe" : "menu");
+                      setChosen(
+                        r.recipeId || r.operations?.[0]?.moduleId || "",
+                      );
+                      setName(r.name);
+                      setParams(r.params || {});
+                      setOperations(r.operations || []);
+                      setManagementInterface(r.managementInterface);
+                      setManagementSubnet(r.managementSubnet);
+                      setAlternate(false);
+                      setStep(0);
+                      setReport(null);
+                      setCheckedRequest("");
+                      setProperties([]);
+                      setRecord("");
+                      setError(
+                        "Profil dimuat. Baca router dan periksa alamat/interface serta isi ulang credential.",
+                      );
+                    }}
+                  >
+                    Gunakan
+                  </button>
+                  <button
+                    onClick={() =>
+                      void run("profile.export", p.id, "Profil diekspor.")
+                    }
+                  >
+                    Ekspor
+                  </button>
+                  <button
+                    className="icon"
+                    aria-label="Hapus profil"
+                    onClick={() =>
+                      void run("profile.delete", p.id, "Profil dihapus.")
+                    }
+                  >
+                    <Trash2 size={15} />
+                  </button>
+                </div>
+              ))}
           </div>
         </section>
       </div>

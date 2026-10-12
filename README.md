@@ -2,24 +2,24 @@
 
 Aplikasi desktop untuk mengelola banyak router melalui alur helper yang sudah Anda rancang: koneksi, evidence, backup, rencana, review, persetujuan, apply, verifikasi, dan rollback. UI menggunakan navigasi konsol administrasi, tabel perangkat, editor script, serta riwayat pekerjaan dalam Bahasa Indonesia.
 
-Versi 1.3.0 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
+Versi 1.4.0 tersedia sebagai installer Windows, `.exe` portable, dan AppImage Linux di `release/`. Program desktop sudah membawa runtime sendiri; Python dan WinBox tidak dibutuhkan untuk menjalankannya. Sambungan ke RouterOS memakai SSH pada jaringan manajemen atau VPN.
 
 ## Mulai menggunakan
 
-1. Jalankan `MikroTik-Helper-Setup-1.3.0-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.3.0-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
+1. Jalankan `MikroTik-Helper-Setup-1.4.0-x64.exe` untuk instalasi Windows, atau `MikroTik-Helper-Portable-1.4.0-x64.exe` untuk menjalankan tanpa installer. Build ini belum memiliki sertifikat penandatanganan publisher Windows.
 2. Buka **Router → Impor helper lama** dan pilih direktori `mikrotik-helper-agent`. Inventory dan skill JSON akan diimpor. Dashboard membaca data melalui koneksi aplikasi ini. Backup dan riwayat lama tetap berada di workspace asal.
 3. Periksa IP, port SSH, username, expected identity, dan lokasi private key. Saat berpindah ke Windows, pilih kembali file key yang tersedia di komputer Windows.
 4. Pilih **Hubungkan**, bandingkan fingerprint host key dengan perangkat melalui jalur yang dipercaya, lalu setujui. Setelah itu aplikasi mengambil snapshot.
 5. Gunakan **Ringkasan**, **Diagnostik**, dan **Pustaka skill** untuk pemeriksaan. Aktifkan pembaruan 60 detik jika diperlukan; polling UI tidak membuat koneksi router otomatis.
-6. Buka **Konfigurasi**, pilih paket atau menu satuan, lalu ikuti **Akses router → Isi kebutuhan → Periksa aturan**. Review rencana di Perubahan, akui peringatan dan berikan grant. Backup wajib selesai sebelum apply. Script manual tersedia untuk kebutuhan lanjutan.
+6. Ikuti **Panduan koneksi**, lalu buka **Quick Setup**. Pilih kebutuhan, desain port/VLAN, IP/DHCP dan layanan. Review rencana di Perubahan, akui peringatan dan berikan grant. Backup wajib selesai sebelum apply. Halaman Konfigurasi menyediakan paket/menu lanjutan.
 
 ### Linux / Pop!_OS
 
 Buka shortcut **MikroTik Helper** di Desktop atau menu aplikasi pada komputer ini. Alternatifnya, jalankan AppImage dari `release/`:
 
 ```bash
-chmod +x release/MikroTik-Helper-1.3.0-x86_64.AppImage
-./release/MikroTik-Helper-1.3.0-x86_64.AppImage
+chmod +x release/MikroTik-Helper-1.4.0-x86_64.AppImage
+./release/MikroTik-Helper-1.4.0-x86_64.AppImage
 ```
 
 Jika AppImage tidak dapat berjalan karena FUSE belum tersedia, jalankan dengan opsi `--appimage-extract-and-run`. Untuk memasang ulang shortcut setelah memindahkan project atau melakukan build baru, jalankan `node scripts/install-local.mjs`.
@@ -96,7 +96,7 @@ Paket Windows dibangun dari Linux; validasi pada Windows native tetap diperlukan
 
 ## Konfigurasi melalui formulir
 
-Halaman **Konfigurasi** menyediakan 26 paket siap isi, 132 menu pembacaan (129 dengan editor mutasi), dan profil reusable tanpa credential. Firewall, VLAN/IP/DHCP, ISP/PCC, PCQ/QoS, HotSpot, WiFi/CAPsMAN dan VPN memakai data SSH asli, compiler rollback serta backup/grant sebelum apply. [Panduan lengkap dan batas dukungan](docs/AUTOMATION.md). Formulir memakai alamat/prefix terpisah, satuan bandwidth, kandidat DHCP dan label pengaturan. [Aturan MTCNA/RFC/RouterOS serta batas pemeriksaan](docs/STANDARDS.md) ditegakkan di backend. Build 1.3.0 sudah dikompilasi; fitur baru belum diuji pada RouterOS/Windows native.
+Halaman **Konfigurasi** menyediakan 26 paket siap isi, 132 menu pembacaan (129 dengan editor mutasi), dan profil reusable tanpa credential. Firewall, VLAN/IP/DHCP, ISP/PCC, PCQ/QoS, HotSpot, WiFi/CAPsMAN dan VPN memakai data SSH asli, compiler rollback serta backup/grant sebelum apply. [Panduan lengkap dan batas dukungan](docs/AUTOMATION.md). Formulir memakai alamat/prefix terpisah, satuan bandwidth, kandidat DHCP dan label pengaturan. [Aturan MTCNA/RFC/RouterOS serta batas pemeriksaan](docs/STANDARDS.md) ditegakkan di backend. Build 1.4.0 sudah dikompilasi; fitur baru belum diuji pada RouterOS/Windows native.
 
 ## Repository GitHub
 
@@ -105,3 +105,7 @@ Source aplikasi disimpan di repository private `efrivahmi/mikrotik-helper-deskto
 Template GitHub Actions tersedia di [docs/ci/build.yml](docs/ci/build.yml). Aktivasi dan status pengembangan dijelaskan di [docs/GITHUB.md](docs/GITHUB.md).
 
 Backup lengkap folder, data aplikasi, dan SSH key yang dirujuk inventory tersedia sebagai asset Release private. Lihat [pemulihan workspace](docs/RECOVERY.md).
+
+## Quick Setup dan panduan koneksi
+
+Halaman **Quick Setup** menyediakan enam tahap dan dropdown kebutuhan, VLAN/tanpa VLAN, fungsi port, IP privat, DHCP, ISP, DNS, firewall IPv4, PCQ dan HotSpot. Port/interface berasal dari SSH; pilihan IP menjadi usulan draft setelah dipilih. Jaringan existing dapat dipertahankan. **Panduan koneksi** menuntun dari kabel/VPN hingga hasil SSH dan pembacaan menu yang nyata. [Panduan dan batas dukungan](docs/QUICK-SETUP.md).

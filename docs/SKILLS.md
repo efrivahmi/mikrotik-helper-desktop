@@ -31,8 +31,10 @@ Untuk domain diagnostik baru, tambahkan menu ke allowlist pada `src/main/policy.
 
 Schema data berada pada `src/shared/model.ts`. UI hanya meminta operasi IPC yang didaftarkan di main/preload. Jangan menambahkan akses shell atau endpoint apply langsung kepada model.
 
-## Katalog 1.3.0
+## Katalog 1.4.0
 
 132 skill inspect dan 26 configure dibuat dari `src/shared/automation.ts` melalui `npm run skills:build`. Skill inspect menjalankan read-only SSH, sedangkan configure mengarahkan ke compiler/UI dan tidak dapat memberi grant. Tambah menu/paket di katalog lalu implementasikan operasi pada `src/main/automation.ts`; gunakan jalur backup dan apply engine. Skill yang sudah diedit pengguna tidak ditimpa saat startup. Detail di [AUTOMATION.md](AUTOMATION.md).
 
 Skill paket baru mencantumkan versi dan sumber aturan konfigurasi. Error/peringatan tetap dievaluasi compiler backend dan tidak bergantung pada isi skill yang dapat diedit. Lihat [STANDARDS.md](STANDARDS.md).
+
+Skill `configure-quick-setup` menuntun ke wizard komposisi berbasis pilihan/evidence. Bundel kini berisi 163 skill; Quick Setup memakai engine yang sama, dengan backup/grant wajib.

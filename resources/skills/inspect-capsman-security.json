@@ -1,7 +1,7 @@
 {
   "name": "inspect-capsman-security",
   "title": "Periksa Security CAPsMAN legacy",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Security CAPsMAN legacy langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

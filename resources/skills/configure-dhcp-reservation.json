@@ -1,7 +1,7 @@
 {
   "name": "configure-dhcp-reservation",
   "title": "Reservasi DHCP",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "mode": "plan-only",
   "purpose": "Lease statis MAC/IP; tidak me-renew atau menghapus sesi pengguna.",
   "domains": [
@@ -33,8 +33,13 @@
   ],
   "recipeId": "dhcp-reservation",
   "standards": {
-    "version": "2026.10.2",
+    "version": "2026.10.3",
     "sources": {
+      "connection": {
+        "title": "MikroTik — konfigurasi dan akses pertama",
+        "url": "https://manual.mikrotik.com/docs/getting-started/first-time-configuration/",
+        "kind": "Panduan vendor"
+      },
       "mtcna": {
         "title": "MTCNA — kurikulum dasar",
         "url": "https://i.mt.lv/cdn/training_pdf/mtcna_outline_2019181161836.pdf",

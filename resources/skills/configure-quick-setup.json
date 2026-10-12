@@ -1,0 +1,141 @@
+{
+  "name": "configure-quick-setup",
+  "title": "Quick Setup berdasarkan kebutuhan",
+  "version": "1.4.0",
+  "mode": "plan-only",
+  "purpose": "Panduan koneksi dan rancangan port/LAN/VLAN, IP, DHCP, ISP, firewall, PCQ dan HotSpot dari pilihan pengguna serta evidence SSH.",
+  "domains": [
+    "quick-setup",
+    "management",
+    "vlan",
+    "dhcp",
+    "isp",
+    "firewall",
+    "qos",
+    "hotspot"
+  ],
+  "commands": [],
+  "checks": [
+    "Jalur management dipertahankan",
+    "Port lama tidak dilepas",
+    "IP usulan tidak bertumpuk dengan konfigurasi yang terbaca",
+    "Review standar, dependensi dan kapasitas"
+  ],
+  "safety": [
+    "Tidak mengubah perangkat saat memilih preset",
+    "Tidak reset atau reboot",
+    "Password tidak disertakan profil",
+    "Backup gagal menghentikan eksekusi"
+  ],
+  "workflow": [
+    "Ikuti Panduan koneksi",
+    "Baca router untuk Quick Setup",
+    "Pilih kebutuhan dan desain",
+    "Pilih port serta rencana IP",
+    "Pilih layanan",
+    "Review dan grant",
+    "Backup baru terverifikasi sebelum apply",
+    "Periksa konfigurasi dan layanan client"
+  ],
+  "quickSetup": {
+    "version": "1.0",
+    "purposes": [
+      "home",
+      "office",
+      "school",
+      "hotspot",
+      "branch",
+      "custom"
+    ],
+    "evidenceMenus": [
+      "interfaces",
+      "ethernet",
+      "bridge",
+      "bridge-port",
+      "bridge-vlan",
+      "interface-list",
+      "interface-list-member",
+      "vlan",
+      "ip-address",
+      "ip-pool",
+      "dhcp-server",
+      "dhcp-network",
+      "dhcp-lease",
+      "dhcp-client",
+      "pppoe-client",
+      "static-route",
+      "firewall-filter",
+      "firewall-nat",
+      "simple-queue",
+      "queue-type",
+      "dns"
+    ]
+  },
+  "standards": {
+    "version": "2026.10.3",
+    "sources": {
+      "connection": {
+        "title": "MikroTik — konfigurasi dan akses pertama",
+        "url": "https://manual.mikrotik.com/docs/getting-started/first-time-configuration/",
+        "kind": "Panduan vendor"
+      },
+      "mtcna": {
+        "title": "MTCNA — kurikulum dasar",
+        "url": "https://i.mt.lv/cdn/training_pdf/mtcna_outline_2019181161836.pdf",
+        "kind": "Kurikulum"
+      },
+      "cidr": {
+        "title": "RFC 4632 — CIDR",
+        "url": "https://www.rfc-editor.org/info/rfc4632/",
+        "kind": "Standar protokol"
+      },
+      "private": {
+        "title": "RFC 1918 — alamat privat",
+        "url": "https://www.rfc-editor.org/info/rfc1918/",
+        "kind": "Acuan alamat"
+      },
+      "dhcp": {
+        "title": "RFC 2131 — DHCP",
+        "url": "https://www.rfc-editor.org/info/rfc2131/",
+        "kind": "Standar protokol"
+      },
+      "bridge": {
+        "title": "IEEE 802.1Q / implementasi VLAN RouterOS",
+        "url": "https://help.mikrotik.com/docs/spaces/ROS/pages/28606465/Bridge+VLAN+Table",
+        "kind": "Implementasi vendor"
+      },
+      "ieee": {
+        "title": "IEEE 802.1Q-2022 — bridges",
+        "url": "https://1.ieee802.org/maintenance/802-1q-2022-rev/",
+        "kind": "Standar jaringan"
+      },
+      "queues": {
+        "title": "RouterOS — Queue / HTB / PCQ",
+        "url": "https://manual.mikrotik.com/docs/firewall-and-quality-of-service/queues/",
+        "kind": "Implementasi vendor"
+      },
+      "security": {
+        "title": "RouterOS — pengamanan router",
+        "url": "https://help.mikrotik.com/docs/spaces/ROS/pages/328353/Securing+your+router",
+        "kind": "Pedoman vendor"
+      },
+      "wifi": {
+        "title": "RouterOS — WiFi",
+        "url": "https://manual.mikrotik.com/docs/wireless/wifi/",
+        "kind": "Implementasi vendor"
+      },
+      "backup": {
+        "title": "RouterOS — backup",
+        "url": "https://manual.mikrotik.com/docs/getting-started/configuration-management/backup/",
+        "kind": "Implementasi vendor"
+      },
+      "pcc": {
+        "title": "RouterOS — PCC",
+        "url": "https://manual.mikrotik.com/docs/high-availability-solutions/load-balancing/per-connection-classifier/",
+        "kind": "Implementasi vendor"
+      }
+    },
+    "scope": "configuration-delta",
+    "certification": false
+  }
+}

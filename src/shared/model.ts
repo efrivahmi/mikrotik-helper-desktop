@@ -62,6 +62,13 @@ export const PlanInputSchema = z.object({
     .object({
       name: z.string(),
       recipeId: z.string().optional(),
+      quickSetup: z
+        .object({
+          purpose: z.string(),
+          topology: z.enum(["bridge", "routed", "vlan"]),
+          segmentCount: z.number().int().min(1).max(4),
+        })
+        .optional(),
       jobId: z.string().uuid().optional(),
       evidenceId: z.string().uuid(),
       managementSubnet: z.string(),

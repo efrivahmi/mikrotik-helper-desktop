@@ -8,8 +8,13 @@ import {
 import { detailRows } from "./routeros";
 import { singletonFields } from "./routeros-literals";
 
-export const STANDARDS_VERSION = "2026.10.2";
+export const STANDARDS_VERSION = "2026.10.3";
 export const STANDARD_SOURCES = {
+  connection: {
+    title: "MikroTik — konfigurasi dan akses pertama",
+    url: "https://manual.mikrotik.com/docs/getting-started/first-time-configuration/",
+    kind: "Panduan vendor",
+  },
   mtcna: {
     title: "MTCNA — kurikulum dasar",
     url: "https://i.mt.lv/cdn/training_pdf/mtcna_outline_2019181161836.pdf",
@@ -213,6 +218,7 @@ export function assessStandards(
   request: AutomationRequest,
   evidence: AutomationEvidence,
   operations: ConfigOperation[],
+  quickSetup = false,
 ): StandardsReport {
   const report: StandardsReport = {
     version: STANDARDS_VERSION,
@@ -246,6 +252,21 @@ export function assessStandards(
     rules.add(rule);
     if (!valid) add(rule, severity, message, source, operation);
   };
+  if (
+    quickSetup &&
+    !operations.some(
+      (o) =>
+        o.moduleId === "firewall-filter" &&
+        o.action === "add" &&
+        o.values.chain === "input",
+    )
+  )
+    add(
+      "QUICK-FIREWALL",
+      "warning",
+      "Paket firewall baru tidak dipilih. Periksa apakah firewall existing melindungi WAN dan layanan router sesuai jaringan yang dirancang.",
+      "security",
+    );
   for (const id of standardsEvidenceMenus(operations.map((o) => o.moduleId)))
     check(
       "EVIDENCE",
@@ -629,6 +650,31 @@ export function assessStandards(
     if (!active(r)) continue;
     if (id === "ip-address") {
       const s = safeSubnet(r.address);
+      if (quickSetup && s) {
+        check(
+          "QUICK-SUBNET",
+          !rows(id).some(
+            (x) =>
+              x !== r &&
+              x.interface !== r.interface &&
+              !!safeSubnet(x.address) &&
+              overlaps(s, safeSubnet(x.address)!),
+          ),
+          "Subnet Quick Setup bertumpuk dengan jaringan pada interface lain.",
+          "cidr",
+          i,
+        );
+        check(
+          "QUICK-ROUTE",
+          !rows("static-route").some((x) => {
+            const route = safeSubnet(x["dst-address"]);
+            return route && route.prefix >= 8 && overlaps(s, route);
+          }),
+          "Subnet Quick Setup bertumpuk dengan route yang sudah terbaca. Pilih rencana IP lain atau desain routing terarah.",
+          "cidr",
+          i,
+        );
+      }
       if (s)
         check(
           "IP-DUPLICATE",
@@ -906,7 +952,11 @@ export function assessStandards(
     ) {
       check(
         "VLAN-RECOVERY",
-        request.alternateAccess,
+        request.alternateAccess ||
+          (quickSetup &&
+            !detailRows(evidence.data.bridge || "").some(
+              (x) => x.name === r.name,
+            )),
         "Mengaktifkan VLAN filtering membutuhkan akses management cadangan yang sudah berfungsi.",
         "bridge",
         i,

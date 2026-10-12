@@ -32,6 +32,8 @@ import {
   STANDARD_SOURCES,
 } from "../shared/standards";
 import { routerQuote } from "../shared/routeros-literals";
+import { quickModules, QUICK_DISCOVERY_MODULES } from "../shared/quick-setup";
+import { compileQuickSetup } from "./quick-setup";
 import { Store } from "./store";
 import { Session, probe, ConnectionError, connectionError } from "./transport";
 import { detailRows, trafficSamples } from "../shared/routeros";
@@ -598,10 +600,12 @@ export class Engine {
       throw new Error(
         "Baca router kembali; evidence tidak cocok dengan koneksi ini.",
       );
-    const operations = request.recipeId
-      ? recipeOperations(request, evidence)
-      : request.operations || [];
-    return assessStandards(request, evidence, operations);
+    const operations = request.quick
+      ? compileQuickSetup(request, evidence, recipeOperations).operations
+      : request.recipeId
+        ? recipeOperations(request, evidence)
+        : request.operations || [];
+    return assessStandards(request, evidence, operations, !!request.quick);
   }
   prepareAutomation(input: unknown, persist: boolean) {
     const request = AutomationRequestSchema.parse(input);
@@ -627,8 +631,9 @@ export class Engine {
       "Menyiapkan konfigurasi",
       async (s, step) => {
         const recipe = RECIPES.find((r) => r.id === request.recipeId);
-        const ids =
-          recipe?.modules || request.operations?.map((o) => o.moduleId) || [];
+        const ids = request.quick
+          ? quickModules(request.quick)
+          : recipe?.modules || request.operations?.map((o) => o.moduleId) || [];
         const fresh = await this.inspectAutomationWithin(
           request.routerId,
           ids,
@@ -971,7 +976,10 @@ export class Engine {
             );
             const fresh = await this.inspectAutomationWithin(
               plan.routerId,
-              plan.automation.standardsOperations.map((o) => o.moduleId),
+              [
+                ...plan.automation.standardsOperations.map((o) => o.moduleId),
+                ...(plan.automation.quickSetup ? QUICK_DISCOVERY_MODULES : []),
+              ],
               s,
               step,
             );
@@ -987,6 +995,7 @@ export class Engine {
               },
               fresh,
               plan.automation.standardsOperations,
+              !!plan.automation.quickSetup,
             );
             if (
               current.findings.some(

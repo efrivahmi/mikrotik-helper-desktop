@@ -1,4 +1,6 @@
-# Konfigurasi melalui UI — 1.3.0
+# Konfigurasi melalui UI — 1.4.0
+
+Untuk rancangan beberapa layanan sekaligus, gunakan [Quick Setup dan Panduan koneksi](QUICK-SETUP.md). Paket/menu di bawah tetap tersedia untuk pengaturan satuan atau lanjutan.
 
 ## Cara memakai
 

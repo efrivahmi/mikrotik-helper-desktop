@@ -1,4 +1,4 @@
-# Aturan konfigurasi dan pengaturan sederhana — 1.3.0
+# Aturan konfigurasi dan pengaturan sederhana — 1.4.0
 
 ## Acuan
 
@@ -55,3 +55,7 @@ Script manual, generator profile HotSpot lama pada halaman Perubahan, dan rencan
 - Generator skill mencantumkan versi/sumber aturan pada skill paket baru. Skill lama atau yang diedit pengguna tidak ditimpa; keselamatan tetap ditegakkan backend.
 
 Naikkan `STANDARDS_VERSION` ketika makna aturan berubah agar draft lama meminta review baru. Jangan membuat tombol atau skill yang melewati backup/grant.
+
+## Quick Setup
+
+Quick Setup memakai evaluator dan compiler yang sama. Subnet baru diperiksa terhadap interface/route existing. Filtering pada bridge VLAN baru hanya dapat disusun setelah port management dan penggunaan port diperiksa; perubahan filtering bridge existing tetap membutuhkan akses cadangan. Lihat [QUICK-SETUP.md](QUICK-SETUP.md).

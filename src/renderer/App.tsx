@@ -54,6 +54,9 @@ import type {
 import { detailRows } from "../shared/routeros";
 import { AutomationPage } from "./AutomationPage";
 import { StandardsPanel } from "./StandardsPanel";
+import { QuickSetupPage } from "./QuickSetupPage";
+import { ConnectionGuidePage } from "./ConnectionGuidePage";
+import { QUICK_DISCOVERY_MODULES } from "../shared/quick-setup";
 
 const api = window.helper.invoke;
 const connectionLabels: Record<ConnectionState["status"], string> = {
@@ -80,6 +83,8 @@ const rate = (n?: number) =>
 const nav = [
   ["overview", "Ringkasan", Gauge],
   ["routers", "Router", RouterIcon],
+  ["connection", "Panduan koneksi", Network],
+  ["quicksetup", "Quick Setup", Settings2],
   ["agent", "Agent", Activity],
   ["automation", "Konfigurasi", Layers3],
   ["diagnostics", "Diagnostik", Terminal],
@@ -297,6 +302,8 @@ export function App() {
   const [search, setSearch] = useState("");
   const [auto, setAuto] = useState(false);
   const [routerForm, setRouterForm] = useState<Partial<Router> | null>(null);
+  const [returnAfterRouterSave, setReturnAfterRouterSave] =
+    useState<View | null>(null);
   const [trust, setTrust] = useState<{
     id: string;
     fingerprint: string;
@@ -495,6 +502,31 @@ export function App() {
       setTrust({ id, fingerprint: report.fingerprint });
     else if (report) setConnectionReport(report);
   };
+  const guidedConnect = async () => {
+    if (!router) return;
+    const report = (await run("router.diagnose", router.id)) as
+      ConnectionReport | undefined;
+    if (report?.success)
+      await run(
+        "automation.inspect",
+        { id: router.id, moduleIds: QUICK_DISCOVERY_MODULES },
+        "SSH berhasil. Membaca konfigurasi untuk Quick Setup.",
+      );
+    else if (report?.needsTrust && report.fingerprint && !report.errorCode)
+      setTrust({
+        id: router.id,
+        fingerprint: report.fingerprint,
+        action: {
+          method: "automation.inspect",
+          input: { id: router.id, moduleIds: QUICK_DISCOVERY_MODULES },
+          success: "Membaca konfigurasi Quick Setup.",
+        },
+      });
+  };
+  const guidedRouterForm = (editing = false) => {
+    setReturnAfterRouterSave(view);
+    setRouterForm(editing && router ? router : { auth: "password" });
+  };
   const sendChat = async (text = chat) => {
     if (!selected || !text.trim()) return;
     const result = await runRouter(
@@ -608,6 +640,10 @@ export function App() {
                       "Kondisi perangkat dan layanan berdasarkan evidence terbaru.",
                     routers:
                       "Kelola koneksi dan identitas perangkat di seluruh lokasi.",
+                    connection:
+                      "Panduan kabel/VPN, akun, SSH dan pembacaan konfigurasi router.",
+                    quicksetup:
+                      "Pilih kebutuhan, peran port, VLAN, IP dan layanan dalam satu rancangan.",
                     agent:
                       "Jalankan pemeriksaan dan siapkan perubahan dari satu ruang kerja.",
                     automation:
@@ -772,7 +808,14 @@ export function App() {
                 </button>
               </section>
             )}
-          {!router && !["routers", "settings", "skills"].includes(view) ? (
+          {!router &&
+          ![
+            "routers",
+            "settings",
+            "skills",
+            "connection",
+            "quicksetup",
+          ].includes(view) ? (
             <Empty
               title="Tambahkan router pertama Anda"
               action={
@@ -786,6 +829,32 @@ export function App() {
               bisa mengimpor inventory helper lama dari halaman Router.
             </Empty>
           ) : null}
+          {(view === "connection" || (view === "quicksetup" && !router)) && (
+            <ConnectionGuidePage
+              state={state}
+              router={router}
+              busy={busy}
+              pending={pending}
+              onAdd={() => guidedRouterForm()}
+              onEdit={() => guidedRouterForm(true)}
+              onChoose={setSelected}
+              onCheck={guidedConnect}
+              onQuick={() => setView("quicksetup")}
+            />
+          )}
+          {view === "quicksetup" && router && (
+            <QuickSetupPage
+              key={router.id}
+              state={state}
+              router={router}
+              busy={busy}
+              pending={pending}
+              run={run}
+              runRouter={runRouter}
+              onConnection={() => setView("connection")}
+              onAdvanced={() => setView("automation")}
+            />
+          )}
           {view === "automation" && router && (
             <AutomationPage
               key={router.id}
@@ -1966,7 +2035,10 @@ export function App() {
           router={routerForm}
           secure={state.secureStorage}
           pending={pending}
-          onClose={() => setRouterForm(null)}
+          onClose={() => {
+            setRouterForm(null);
+            setReturnAfterRouterSave(null);
+          }}
           onSave={async (r, secret, persist) => {
             const saved = await run(
               "router.save",
@@ -1976,7 +2048,8 @@ export function App() {
             if (saved) {
               setSelected(saved.id);
               setRouterForm(null);
-              setView("routers");
+              setView(returnAfterRouterSave || "routers");
+              setReturnAfterRouterSave(null);
             }
           }}
         />

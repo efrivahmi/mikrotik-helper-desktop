@@ -1,7 +1,7 @@
 {
   "name": "inspect-mac-server",
   "title": "Periksa Akses MAC server",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Akses MAC server langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

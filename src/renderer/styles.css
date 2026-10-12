@@ -1824,6 +1824,106 @@ button.source-link {
   margin: 16px 0;
   align-items: flex-start;
 }
+.quick-layout {
+  display: grid;
+  gap: 20px;
+}
+.quick-steps {
+  overflow-x: auto;
+}
+.quick-steps li {
+  min-width: 130px;
+}
+.quick-fields {
+  margin-top: 20px;
+}
+.quick-segment {
+  margin: 18px 0;
+  padding: 16px;
+  border: 1px solid #dfe5ed;
+  border-radius: 6px;
+}
+.quick-segment h3 {
+  margin: 0 0 16px;
+}
+.quick-segment-toolbar {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  max-width: 600px;
+}
+.quick-segment-toolbar input {
+  flex: 1;
+}
+.quick-segment-toolbar span {
+  color: #657386;
+  font-size: 12px;
+}
+.quick-existing-choice {
+  display: grid;
+  gap: 8px;
+  margin: 18px 0;
+  max-width: 620px;
+  font-size: 12px;
+}
+.quick-existing-choice label {
+  font-weight: 600;
+}
+.quick-layout .table-wrap {
+  margin: 20px 0;
+}
+.quick-layout td select {
+  max-width: 280px;
+}
+.quick-service-checks {
+  display: grid;
+  gap: 12px;
+  margin: 18px 0;
+}
+.quick-layout .form-grid input:not([type="checkbox"]),
+.quick-layout .form-grid select {
+  width: 100%;
+}
+.quick-layout .rate-input select {
+  width: 88px;
+}
+.quick-layout .network-input select {
+  width: 145px;
+}
+.connection-guide .form-label {
+  display: block;
+  margin: 16px 0 8px;
+  font-size: 12px;
+  font-weight: 600;
+}
+.connection-guide > .padded > select {
+  width: min(100%, 620px);
+}
+.guide-list {
+  margin: 22px 0;
+  padding-left: 22px;
+  line-height: 1.7;
+}
+.guide-list li {
+  padding: 5px 0 8px 6px;
+}
+.connection-target {
+  display: grid;
+  gap: 7px;
+  padding: 14px;
+  background: #f4f7fb;
+  border: 1px solid #dfe5ed;
+  border-radius: 6px;
+}
+.connection-target span {
+  font-size: 12px;
+  color: #657386;
+}
+.guide-results {
+  margin-top: 24px;
+  border-top: 1px solid #dfe5ed;
+  padding-top: 18px;
+}
 .automation-menu {
   padding-top: 14px;
 }

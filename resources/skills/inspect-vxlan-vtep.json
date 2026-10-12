@@ -1,7 +1,7 @@
 {
   "name": "inspect-vxlan-vtep",
   "title": "Periksa VXLAN VTEP",
-  "version": "1.3.0",
+  "version": "1.4.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi VXLAN VTEP langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

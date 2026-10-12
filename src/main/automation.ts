@@ -16,6 +16,8 @@ import {
 } from "../shared/routeros-literals";
 import type { PlanInput, Router } from "../shared/model";
 import { assessStandards, ipv4Number, ipv4Subnet } from "../shared/standards";
+import { QuickSetupSchema } from "../shared/quick-setup";
+import { compileQuickSetup } from "./quick-setup";
 
 const values = z.record(
   z.string().regex(/^[a-zA-Z][\w.-]*$/),
@@ -28,6 +30,7 @@ export const AutomationRequestSchema = z
     name: z.string().regex(/^[a-zA-Z0-9][a-zA-Z0-9_-]{1,30}$/),
     recipeId: z.string().max(80).optional(),
     params: z.record(z.string(), z.unknown()).optional(),
+    quick: QuickSetupSchema.optional(),
     operations: z
       .array(
         z.object({
@@ -46,8 +49,10 @@ export const AutomationRequestSchema = z
     alternateAccess: z.boolean(),
   })
   .refine(
-    (v) => !!v.recipeId || !!v.operations?.length,
-    "Pilih paket atau operasi konfigurasi.",
+    (v) =>
+      [!!v.recipeId, !!v.quick, !!v.operations?.length].filter(Boolean)
+        .length === 1,
+    "Pilih satu mode: Quick Setup, paket, atau operasi menu.",
   );
 export const ipNumber = ipv4Number;
 export const subnet = ipv4Subnet;
@@ -944,10 +949,15 @@ export async function compileAutomation(
       "Subnet management terlalu luas; gunakan jaringan administrator yang spesifik.",
     );
   mustInterface(e, request.managementInterface);
-  const operations = request.recipeId
-    ? recipeOperations(request, e)
-    : request.operations || [];
-  const standards = assessStandards(request, e, operations);
+  const quick = request.quick
+    ? compileQuickSetup(request, e, recipeOperations)
+    : undefined;
+  const operations = quick
+    ? quick.operations
+    : request.recipeId
+      ? recipeOperations(request, e)
+      : request.operations || [];
+  const standards = assessStandards(request, e, operations, !!quick);
   const violations = standards.findings.filter((f) => f.severity === "error");
   if (violations.length)
     throw new Error(
@@ -1314,8 +1324,18 @@ export async function compileAutomation(
     throw new Error(
       "Tidak ada pemeriksaan target/pemulihan yang dapat dibuktikan.",
     );
-  if (request.recipeId === "hotspot" && request.params?.createPortal) {
-    const directory = portalDirectory(request, e),
+  const portals =
+    quick?.portals ||
+    (request.recipeId === "hotspot" && request.params?.createPortal
+      ? [
+          {
+            server: `AGENT-${request.name}`,
+            directory: portalDirectory(request, e),
+          },
+        ]
+      : []);
+  for (const portal of portals) {
+    const directory = portal.directory,
       login = `${directory}/login.html`;
     preconditions.push({
       command: `/file print count-only where name=${routerQuote(login)}`,
@@ -1327,7 +1347,7 @@ export async function compileAutomation(
       `:if ([:len [/file find where name=${routerQuote(directory)}]] != 0) do={:error "Portal directory already exists"}`,
     );
     apply.push(
-      `/ip hotspot reset-html numbers=[find where name=${routerQuote(`AGENT-${request.name}`)}]`,
+      `/ip hotspot reset-html numbers=[find where name=${routerQuote(portal.server)}]`,
     );
     verify.push({
       command: `/file print count-only where name=${routerQuote(login)}`,
@@ -1337,13 +1357,28 @@ export async function compileAutomation(
     });
     // Keep only the new generated portal as a reusable asset; no existing file is edited.
   }
+  if (quick) {
+    for (const port of quick.claimedPorts)
+      for (const id of [
+        "bridge-port",
+        "ip-address",
+        "dhcp-client",
+        "dhcp-server",
+        "pppoe-client",
+        "vlan",
+        "hotspot-server",
+      ])
+        preconditions.push(countCheck(id, { interface: port }, 0));
+    for (const preserved of quick.preserved)
+      preconditions.push(countCheck("ip-address", preserved, 1));
+  }
   const uniq = (v: PlanInput["verify"]) => [
     ...new Map(v.map((c) => [JSON.stringify(c), c])).values(),
   ];
   return {
     routerId: request.routerId,
-    title: `${request.name} · ${RECIPES.find((r) => r.id === request.recipeId)?.title || "Pengaturan menu"}`,
-    reason: `${operations.length} operasi dari evidence SSH ${e.createdAt}; router ${e.identity}, RouterOS ${e.version}. Management ${request.managementInterface}/${request.managementSubnet}; akses cadangan ${request.alternateAccess ? "dikonfirmasi" : "belum dikonfirmasi"}. Backup export dan biner wajib selesai sebelum perubahan. Credential berada di vault; autentikasi client/service tetap perlu dibuktikan setelah konfigurasi.${request.recipeId === "hotspot" && request.params?.createPortal ? " Portal bawaan baru dibuat dalam direktori AGENT. Rollback mengembalikan konfigurasi; file portal baru dipertahankan sebagai aset untuk digunakan ulang." : ""}`,
+    title: `${request.name} · ${quick ? "Quick Setup" : RECIPES.find((r) => r.id === request.recipeId)?.title || "Pengaturan menu"}`,
+    reason: `${operations.length} operasi dari evidence SSH ${e.createdAt}; router ${e.identity}, RouterOS ${e.version}. Management ${request.managementInterface}/${request.managementSubnet}; akses cadangan ${request.alternateAccess ? "dikonfirmasi" : "belum dikonfirmasi"}. Backup export dan biner wajib selesai sebelum perubahan. Credential berada di vault; autentikasi client/service tetap perlu dibuktikan setelah konfigurasi.${portals.length ? " Portal bawaan baru dibuat dalam direktori AGENT. Rollback mengembalikan konfigurasi; file portal baru dipertahankan sebagai aset untuk digunakan ulang." : ""}`,
     apply: `# AGENT-${request.name}\n${guards.join("\n")}\n${apply.join("\n")}\n`,
     rollback: `# AGENT-${request.name} ROLLBACK\n${rollback.reverse().flat().join("\n")}\n`,
     preconditions: uniq(preconditions),
@@ -1352,6 +1387,13 @@ export async function compileAutomation(
     automation: {
       name: request.name,
       recipeId: request.recipeId,
+      quickSetup: request.quick
+        ? {
+            purpose: request.quick.purpose,
+            topology: request.quick.topology,
+            segmentCount: request.quick.segments.length,
+          }
+        : undefined,
       evidenceId: e.id,
       managementSubnet: request.managementSubnet,
       managementInterface: request.managementInterface,

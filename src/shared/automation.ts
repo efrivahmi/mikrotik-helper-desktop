@@ -1,3 +1,4 @@
+import type { QuickSetupConfig } from "./quick-setup";
 export interface ConfigModule {
   id: string;
   title: string;
@@ -1331,6 +1332,7 @@ export interface AutomationRequest {
   routerId: string;
   name: string;
   recipeId?: string;
+  quick?: QuickSetupConfig;
   params?: Record<string, unknown>;
   operations?: ConfigOperation[];
   evidenceId: string;
