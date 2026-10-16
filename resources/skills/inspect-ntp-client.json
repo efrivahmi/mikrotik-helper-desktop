@@ -1,7 +1,7 @@
 {
   "name": "inspect-ntp-client",
   "title": "Periksa NTP client",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi NTP client langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

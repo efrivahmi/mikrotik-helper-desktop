@@ -1,7 +1,7 @@
 {
   "name": "configure-capsman",
   "title": "WiFi CAPsMAN modern",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Controller, security, SSID dan provisioning; memerlukan radio/package yang sesuai.",
   "domains": [

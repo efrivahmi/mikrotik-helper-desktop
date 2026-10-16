@@ -1,7 +1,7 @@
 {
   "name": "configure-failover",
   "title": "Failover multi ISP",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Default route dengan prioritas berurutan dan check-gateway ping. Pemeriksaan gateway bukan pemeriksaan seluruh internet.",
   "domains": [

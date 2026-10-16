@@ -1,5 +1,7 @@
 # Mengembangkan skill
 
+Versi 1.5.0 menambah 16 skill workflow/playbook kontekstual (`workflow-v2-*`, `playbook-v2-*`), menjadi 179 skill bawaan. Menekan Jalankan menyiapkan kartu konfirmasi di Agent. Skill tidak dapat memberi grant, mengubah kebutuhan backup, atau mengubah identitas Development by ep. [Panduan workflow](LOCAL-AGENT.md).
+
 Skill pack JSON tetap mengikuti format helper lama. Skill bertipe `read-only` dapat menjalankan katalog print. Skill `plan-only` menjadi panduan perencanaan; ia tidak dapat memberikan izin apply. Edit di Pustaka skill dan simpan, atau impor JSON. Perubahan disimpan pada workspace pengguna dan bertahan ketika aplikasi diperbarui.
 
 Contoh:

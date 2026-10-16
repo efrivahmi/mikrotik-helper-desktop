@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipip",
   "title": "Periksa IPIP tunnel",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi IPIP tunnel langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

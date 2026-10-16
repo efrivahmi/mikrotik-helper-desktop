@@ -1,7 +1,7 @@
 {
   "name": "configure-vlan-dhcp",
   "title": "VLAN + IP + DHCP",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Segment LAN terpisah dengan VLAN, gateway dan DHCP.",
   "domains": [

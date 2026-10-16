@@ -1,7 +1,7 @@
 {
   "name": "configure-bridge-vlan",
   "title": "VLAN access / trunk pada bridge",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Tabel VLAN, PVID access, dan VLAN filtering; membutuhkan jalur management cadangan.",
   "domains": [

@@ -10,6 +10,8 @@ const methods = new Set([
   "router.trust",
   "snapshot",
   "backup",
+  "agent.confirm",
+  "agent.cancel",
   "diagnostic",
   "skill.run",
   "skill.save",

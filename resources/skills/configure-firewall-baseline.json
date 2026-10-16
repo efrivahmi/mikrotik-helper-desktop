@@ -1,7 +1,7 @@
 {
   "name": "configure-firewall-baseline",
   "title": "Firewall proteksi router",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Chain khusus, established/related, management, ICMP, DNS/DHCP LAN dan proteksi input WAN; rule lama dipertahankan.",
   "domains": [

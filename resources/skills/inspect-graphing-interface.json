@@ -1,7 +1,7 @@
 {
   "name": "inspect-graphing-interface",
   "title": "Periksa Grafik interface",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Grafik interface langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

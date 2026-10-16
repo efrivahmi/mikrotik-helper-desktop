@@ -1,7 +1,7 @@
 {
   "name": "configure-quick-setup",
   "title": "Quick Setup berdasarkan kebutuhan",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Panduan koneksi dan rancangan port/LAN/VLAN, IP, DHCP, ISP, firewall, PCQ dan HotSpot dari pilihan pengguna serta evidence SSH.",
   "domains": [

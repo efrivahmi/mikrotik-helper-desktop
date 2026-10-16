@@ -52,6 +52,8 @@ Pilih direktori portal dengan `login.html` yang sudah tersedia, atau centang **B
 
 ## Backup wajib
 
+Versi 1.5.0 mewajibkan **konfirmasi backup penuh baru** pada setiap apply dan rollback. Selain export/biner di bawah, seluruh file pengguna terdaftar diarsipkan terenkripsi, diunduh dua kali dan diperiksa dengan manifest. User Manager/The Dude/container yang belum memiliki prosedur backup khusus menghentikan import. Arsip lama tidak memenuhi syarat cakupan baru. Lihat [cakupan dan batas backup penuh](LOCAL-AGENT.md#backup-penuh-yang-diterapkan).
+
 Sebelum setiap apply dan rollback, aplikasi:
 
 1. Membuat export konfigurasi tersamarkan.

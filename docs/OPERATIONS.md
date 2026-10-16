@@ -39,6 +39,8 @@ Import bukan transaksi atomik. Jika terputus, baca evidence dan gunakan Periksa 
 
 ## Model agent
 
+Mulai 1.5.0, Agent menyiapkan kartu tindakan terlebih dahulu, termasuk untuk skill dan backup. Review target/perintah lalu konfirmasikan; pesan chat tidak langsung menjalankan SSH. Topik/target pemeriksaan berhasil dapat dipakai ulang maksimal 20 menit, sedangkan evidence dibaca ulang. Analisis model dipilih eksplisit melalui `analisis model: …`. [Alur lengkap, batas kesimpulan dan backup penuh](LOCAL-AGENT.md).
+
 Mode lokal menyediakan workflow kondisi router, bandwidth/PCQ, jaringan/AP/switch, HotSpot, log, backup, serta perintah print dari katalog. Laporan berasal dari output SSH. Permintaan di luar katalog mendapat panduan; tidak diterjemahkan menjadi perubahan otomatis. Percakapan bebas memerlukan model function-calling yang berjalan pada endpoint API kompatibel Chat Completions. Endpoint harus HTTPS, kecuali localhost. Pengaturan meminta persetujuan pengiriman pesan dan evidence karena data dapat memuat IP privat, nama perangkat, atau isi log.
 
 Model memiliki paling banyak enam langkah, empat tool request per langkah, timeout, dan batas ukuran respons. Tool proposal menyimpan rencana sebagai draft. Persetujuan perubahan tetap tersedia hanya melalui halaman Perubahan.

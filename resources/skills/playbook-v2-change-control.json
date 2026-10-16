@@ -1,0 +1,32 @@
+{
+  "name": "playbook-v2-change-control",
+  "title": "Review perubahan, backup penuh dan pemulihan",
+  "version": "1.5.0",
+  "mode": "plan-only",
+  "purpose": "Panduan keputusan berdasarkan bukti. Tidak menjalankan perubahan atau memberikan grant.",
+  "domains": [
+    "backup",
+    "security"
+  ],
+  "commands": [],
+  "checks": [
+    "Identitas target unik dan scope pengguna eksplisit",
+    "Bukti terbaru dari setiap lapisan yang relevan",
+    "Hipotesis diberi label; penyebab belum terbukti tidak disebut fakta",
+    "Nilai lama, apply, rollback dan verifikasi spesifik tersedia",
+    "Export, biner sistem terenkripsi, seluruh file pengguna yang terdaftar, dan manifest checksum. Database User Manager/The Dude, container atau penyimpanan khusus memerlukan prosedur tersendiri; jika ditemukan, cakupan belum penuh dan perubahan dihentikan. Pemulihan perangkat belum diuji."
+  ],
+  "safety": [
+    "Portal, IP perangkat lain dan sesi terlindungi sesuai batas pemilik",
+    "Backup gagal/tidak penuh menghentikan import",
+    "Tidak otomatis rollback atau mengulang hasil yang belum pasti"
+  ],
+  "workflow": [
+    "Tanyakan data target yang belum tersedia",
+    "Kumpulkan hanya evidence yang disetujui",
+    "Bandingkan waktu dan alamat asal/translasi/lease",
+    "Siapkan rencana terarah bila memang diperlukan",
+    "Konfirmasi backup penuh dan grant yang terikat hash",
+    "Verifikasi state serta layanan client; jangan mengklaim selesai dari hash/copy saja"
+  ]
+}

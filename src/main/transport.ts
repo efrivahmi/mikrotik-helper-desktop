@@ -1,9 +1,11 @@
-import { Client, utils, type ConnectConfig } from "ssh2";
+import ssh2, { type Client as SSHClient, type ConnectConfig } from "ssh2";
+const { Client, utils } = ssh2;
 import { readFileSync } from "node:fs";
 import { createHash } from "node:crypto";
 import { homedir } from "node:os";
 import type { Router } from "../shared/model";
 import { remoteError } from "./policy";
+import { routerQuote } from "../shared/routeros-literals";
 
 export class ConnectionError extends Error {
   constructor(
@@ -169,7 +171,7 @@ export async function probe(router: Router): Promise<string> {
   });
 }
 export class Session {
-  constructor(private conn: Client) {}
+  constructor(private conn: SSHClient) {}
   static async connect(router: Router, secret?: string): Promise<Session> {
     if (!router.fingerprint)
       throw new ConnectionError(
@@ -290,38 +292,87 @@ export class Session {
     });
   }
   download(name: string): Promise<Buffer> {
-    if (!/^AGENT-[a-f0-9-]+\.backup$/.test(name)) throw new Error("Nama backup tidak valid.");
+    if (!/^AGENT-[a-f0-9-]+\.backup$/.test(name))
+      throw new Error("Nama backup tidak valid.");
+    return this.downloadFile(name).then((buffer) => {
+      if (buffer.length < 64)
+        throw new Error("Biner backup kosong/terlalu pendek.");
+      return buffer;
+    });
+  }
+  downloadFile(name: string): Promise<Buffer> {
+    if (
+      !name ||
+      name.length > 1000 ||
+      !/^[a-zA-Z0-9_. ()@,+/-]+$/.test(name) ||
+      name.startsWith("/") ||
+      name
+        .split("/")
+        .some(
+          (part) =>
+            !part || part === "." || part === ".." || part.startsWith("-"),
+        )
+    )
+      throw new Error(
+        "Nama file tidak dapat diarsipkan secara aman; backup penuh dihentikan.",
+      );
+    const expectedName = name.split("/").at(-1)!;
     return new Promise((resolve, reject) => {
-      let settled = false, buffer = Buffer.alloc(0), size = -1, channel: any;
-      const timer = setTimeout(() => finish(new Error("Download backup SCP timeout.")), 90000);
+      let settled = false,
+        buffer = Buffer.alloc(0),
+        size = -1,
+        channel: any;
+      const timer = setTimeout(
+        () => finish(new Error("Download backup SCP timeout.")),
+        90000,
+      );
       const finish = (error?: Error, data?: Buffer) => {
         if (settled) return;
-        settled = true; clearTimeout(timer); channel?.close();
+        settled = true;
+        clearTimeout(timer);
+        channel?.close();
         error ? reject(error) : resolve(data!);
       };
-      const closed = () => finish(new Error("Sambungan terputus saat mengunduh backup."));
+      const closed = () =>
+        finish(new Error("Sambungan terputus saat mengunduh backup."));
       this.conn.once("close", closed);
-      this.conn.exec(`scp -f ${name}`, (error, stream) => {
-        if (error) { this.conn.removeListener("close", closed); return finish(error); }
+      this.conn.exec(`scp -f ${routerQuote(name)}`, (error, stream) => {
+        if (error) {
+          this.conn.removeListener("close", closed);
+          return finish(error);
+        }
         channel = stream;
-        stream.once("close", () => { this.conn.removeListener("close", closed); if (!settled) finish(new Error("Download backup tidak lengkap.")); });
+        stream.once("close", () => {
+          this.conn.removeListener("close", closed);
+          if (!settled) finish(new Error("Download backup tidak lengkap."));
+        });
         stream.on("error", finish);
         stream.stderr.on("data", () => {});
         stream.on("data", (chunk: Buffer) => {
           if (settled) return;
-          if (buffer.length + chunk.length > 64 * 1024 * 1024 + 4096) return finish(new Error("Backup melebihi batas transfer 64 MiB."));
+          if (buffer.length + chunk.length > 64 * 1024 * 1024 + 4096)
+            return finish(new Error("Backup melebihi batas transfer 64 MiB."));
           buffer = Buffer.concat([buffer, chunk]);
           if (size < 0) {
-            const newline = buffer.indexOf(10); if (newline < 0) return;
+            const newline = buffer.indexOf(10);
+            if (newline < 0) return;
             const header = buffer.subarray(0, newline).toString("utf8");
             const match = header.match(/^C[0-7]{4} (\d+) (.+)$/);
-            if (!match || match[2] !== name) return finish(new Error("Header file backup SCP tidak valid."));
+            if (!match || match[2] !== expectedName)
+              return finish(new Error("Header file backup SCP tidak valid."));
             size = Number(match[1]);
-            if (!Number.isSafeInteger(size) || size < 64 || size > 64*1024*1024) return finish(new Error("Ukuran backup tidak valid."));
-            buffer = buffer.subarray(newline + 1); stream.write(Buffer.from([0]));
+            if (
+              !Number.isSafeInteger(size) ||
+              size < 0 ||
+              size > 64 * 1024 * 1024
+            )
+              return finish(new Error("Ukuran backup tidak valid."));
+            buffer = buffer.subarray(newline + 1);
+            stream.write(Buffer.from([0]));
           }
           if (buffer.length >= size + 1) {
-            if (buffer[size] !== 0 || buffer.length !== size + 1) return finish(new Error("Transfer backup SCP gagal cocok."));
+            if (buffer[size] !== 0 || buffer.length !== size + 1)
+              return finish(new Error("Transfer backup SCP gagal cocok."));
             const payload = Buffer.from(buffer.subarray(0, size));
             stream.write(Buffer.from([0]), () => finish(undefined, payload));
           }

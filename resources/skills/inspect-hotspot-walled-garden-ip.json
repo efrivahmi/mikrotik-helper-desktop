@@ -1,7 +1,7 @@
 {
   "name": "inspect-hotspot-walled-garden-ip",
   "title": "Periksa Walled garden IP",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Walled garden IP langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

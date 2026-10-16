@@ -1,7 +1,7 @@
 {
   "name": "inspect-simple-queue",
   "title": "Periksa Simple Queue",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Simple Queue langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

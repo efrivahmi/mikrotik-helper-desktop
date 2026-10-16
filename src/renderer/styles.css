@@ -1964,3 +1964,21 @@ button.source-link {
     grid-template-columns: 1fr;
   }
 }
+
+.agent-action-card {
+  flex: 0 0 auto;
+  max-height: 300px;
+  overflow: auto;
+  margin: 12px;
+}
+.agent-action-card h3 {
+  margin: 0 0 8px;
+}
+.agent-action-card .script {
+  max-height: 160px;
+  overflow: auto;
+}
+.agent-action-card .row {
+  margin-top: 12px;
+  flex-wrap: wrap;
+}

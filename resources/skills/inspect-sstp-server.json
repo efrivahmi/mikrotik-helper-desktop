@@ -1,7 +1,7 @@
 {
   "name": "inspect-sstp-server",
   "title": "Periksa SSTP server",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi SSTP server langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

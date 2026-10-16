@@ -1,7 +1,7 @@
 {
   "name": "inspect-ipv6-nd",
   "title": "Periksa Router advertisement / ND",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Router advertisement / ND langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

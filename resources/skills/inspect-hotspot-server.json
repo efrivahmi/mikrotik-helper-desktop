@@ -1,7 +1,7 @@
 {
   "name": "inspect-hotspot-server",
   "title": "Periksa HotSpot server",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi HotSpot server langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

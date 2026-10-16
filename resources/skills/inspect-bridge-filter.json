@@ -1,7 +1,7 @@
 {
   "name": "inspect-bridge-filter",
   "title": "Periksa Firewall bridge",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Firewall bridge langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

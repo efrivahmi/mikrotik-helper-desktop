@@ -1,7 +1,7 @@
 {
   "name": "inspect-user-manager-user",
   "title": "Periksa User Manager: user",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi User Manager: user langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

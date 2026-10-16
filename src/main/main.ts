@@ -22,6 +22,7 @@ import {
   type AutomationEvidence,
 } from "../shared/automation";
 import { randomUUID } from "node:crypto";
+import { DEVELOPMENT_IDENTITY } from "../shared/local-agent";
 import {
   SettingsSchema,
   type Plan,
@@ -70,6 +71,12 @@ function handle(name: string, fn: (input: any) => unknown) {
 }
 
 async function create() {
+  app.setAboutPanelOptions({
+    applicationName: "MikroTik Helper",
+    applicationVersion: app.getVersion(),
+    copyright: DEVELOPMENT_IDENTITY,
+    authors: ["ep"],
+  });
   store = new Store(app.getPath("userData"));
   const vault: Vault = {
     available: () =>
@@ -155,14 +162,33 @@ async function create() {
     return engine.trust(v.id, v.fingerprint);
   });
   handle("snapshot", (p) => engine.snapshot(uuid.parse(p)));
-  handle("backup", (p) => engine.backup(uuid.parse(p)));
+  handle("backup", (p) => engine.chat(uuid.parse(p), "Buat backup penuh"));
+  handle("agent.confirm", (p) => {
+    const v = z
+      .object({
+        id: uuid,
+        actionId: uuid,
+        hash: z.string().length(64),
+        confirmation: z.string().max(200),
+        backupConfirmed: z.boolean().default(false),
+      })
+      .parse(p);
+    return engine.confirmAgentAction(
+      v.id,
+      v.actionId,
+      v.hash,
+      v.confirmation,
+      v.backupConfirmed,
+    );
+  });
+  handle("agent.cancel", (p) => engine.cancelAgentAction(uuid.parse(p)));
   handle("diagnostic", (p) => {
     const v = z.object({ id: uuid, command: z.string().max(1000) }).parse(p);
     return engine.diagnostic(v.id, v.command);
   });
   handle("skill.run", (p) => {
     const v = z.object({ id: uuid, name: z.string().max(100) }).parse(p);
-    return engine.skill(v.id, v.name);
+    return engine.requestSkill(v.id, v.name);
   });
   handle("skill.save", (p) => engine.saveSkill(p));
   handle("automation.inspect", (p) => {
@@ -320,6 +346,7 @@ async function create() {
         confirmation: z.string(),
         rollback: z.boolean().default(false),
         acknowledgedRules: z.array(z.string().max(120)).max(1000).default([]),
+        backupConfirmed: z.literal(true),
       })
       .parse(p);
     return engine.apply(
@@ -328,6 +355,7 @@ async function create() {
       v.confirmation,
       v.rollback,
       v.acknowledgedRules,
+      v.backupConfirmed,
     );
   });
   handle("plan.export", async (p) => {

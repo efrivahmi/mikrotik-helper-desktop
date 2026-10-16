@@ -1,7 +1,7 @@
 {
   "name": "inspect-management-users",
   "title": "Periksa Akun administrator",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Akun administrator langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

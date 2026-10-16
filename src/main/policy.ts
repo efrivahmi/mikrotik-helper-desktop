@@ -7,6 +7,7 @@ export const MENUS = [
   ...new Set([
     "system identity",
     "user active",
+    "ppp active",
     "system resource",
     "system routerboard",
     "system package",
@@ -71,7 +72,11 @@ export function readCommand(input: string): string {
     /^:put \[\/([a-z0-9 -]+?) get(?: \[find where (.+)\])? ([a-zA-Z][\w.-]*)\]$/,
   );
   if (get) {
-    if (!MENUS.includes(get[1]) || isSecretField(get[3]))
+    if (
+      !MENUS.includes(get[1]) ||
+      isSecretField(get[3]) ||
+      get[3] === "contents"
+    )
       throw new Error("Properti get tidak tersedia untuk diagnostik.");
     if (
       get[2] &&
@@ -95,10 +100,43 @@ export function readCommand(input: string): string {
       "Menu/perintah ini belum tersedia di katalog diagnostik. Gunakan menu print yang didukung.",
     );
   const tail = match[2] || "";
-  const tokens = tail.match(/(?:[^\s"]+|"(?:\\.|[^"\\])*")+/g) || [];
+  const tokens: string[] = tail.match(/(?:[^\s"]+|"(?:\\.|[^"\\])*")+/g) || [];
   if (tokens.join(" ") !== tail)
     throw new Error("Grammar diagnostik tidak valid.");
+  let inWhere = false,
+    expectPredicate = false;
   for (const token of tokens) {
+    if (
+      /^(?:file|interval|follow|follow-only|append|show-sensitive|as-value)(?:=|$)/i.test(
+        token,
+      )
+    )
+      throw new Error(
+        "Penulisan file, langganan output dan pembacaan sensitif tidak diizinkan pada diagnostik.",
+      );
+    if (token === "where") {
+      if (inWhere) throw new Error("Hanya satu selector where diizinkan.");
+      inWhere = true;
+      expectPredicate = true;
+      continue;
+    }
+    if (inWhere) {
+      if (!expectPredicate && token === "and") {
+        expectPredicate = true;
+        continue;
+      }
+      if (
+        expectPredicate &&
+        predicate.test(token) &&
+        !isSecretField(token.split("=")[0])
+      ) {
+        expectPredicate = false;
+        continue;
+      }
+      throw new Error(
+        "Selector diagnostik harus berupa property=nilai dan penghubung and.",
+      );
+    }
     if (
       [
         "detail",
@@ -107,14 +145,21 @@ export function readCommand(input: string): string {
         "stats",
         "stats-detail",
         "without-paging",
-        "where",
-        "and",
       ].includes(token)
     )
       continue;
-    if (predicate.test(token) && !isSecretField(token.split("=")[0])) continue;
+    if (
+      /^proplist=[a-zA-Z][\w.-]*(?:,[a-zA-Z][\w.-]*)*$/.test(token) &&
+      token
+        .slice(9)
+        .split(",")
+        .every((p) => !isSecretField(p) && p !== "contents")
+    )
+      continue;
     throw new Error(`Argumen diagnostik tidak diizinkan: ${token}`);
   }
+  if (inWhere && expectPredicate)
+    throw new Error("Selector diagnostik belum lengkap.");
   // Singleton menus have no paginated rows; RouterOS 6 rejects table options here.
   if (
     [
@@ -132,12 +177,9 @@ export function readCommand(input: string): string {
       throw new Error("Menu singleton ini hanya mendukung print biasa.");
     return `/${match[1]} print`;
   }
-  return (
-    command +
-    (tail.includes("without-paging") || tail.includes("count-only")
-      ? ""
-      : " without-paging")
-  );
+  return tokens.includes("without-paging") || tokens.includes("count-only")
+    ? command
+    : command.replace(" print", " print without-paging");
 }
 export function redact(text: string): string {
   return text
@@ -380,6 +422,25 @@ export const DIAGNOSTICS: Record<string, string> = {
   nat: "/ip firewall nat print detail",
   vpn: "/ip ipsec active-peers print detail",
   logs: "/log print",
+  "hotspot-hosts": "/ip hotspot host print detail",
+  "hotspot-bindings": "/ip hotspot ip-binding print detail",
+  "hotspot-profiles": "/ip hotspot profile print detail",
+  "dhcp-networks": "/ip dhcp-server network print detail",
+  pools: "/ip pool print detail",
+  arp: "/ip arp print detail",
+  "bridge-vlans": "/interface bridge vlan print detail",
+  "dns-static": "/ip dns static print detail",
+  "firewall-stats": "/ip firewall filter print stats",
+  "ipsec-policies": "/ip ipsec policy print detail",
+  "ppp-active": "/ppp active print detail",
+  "wireguard-peers": "/interface wireguard peers print detail",
+  "wireless-registration":
+    "/interface wireless registration-table print detail",
+  "wifi-registration": "/interface wifi registration-table print detail",
+  "capsman-registration": "/caps-man registration-table print detail",
+  "admin-active": "/user active print detail",
+  license: "/system license print",
+  packages: "/system package print detail",
 };
 export const SNAPSHOT_KEYS = [
   "identity",

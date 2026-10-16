@@ -1166,9 +1166,10 @@ export async function compileAutomation(
             `${key}=${routerQuote(isSecretField(key) ? stash(value) : value)}`,
         )
         .join(" ");
-    const find = m.singleton
-      ? ""
-      : `[find where ${selectorText(input.selector)}]`;
+    const find =
+      m.singleton || input.action === "add"
+        ? ""
+        : `[find where ${selectorText(input.selector)}]`;
     if (input.action === "add") {
       if (m.fields.includes("comment") && !props.name)
         props.comment = `AGENT-${request.name}-${i + 1}${props.comment ? ` ${props.comment}` : ""}`;

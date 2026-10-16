@@ -1,9 +1,9 @@
 {
   "name": "mikrotik-helper-desktop",
   "productName": "MikroTik Helper",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "description": "Desktop console for evidence-based MikroTik operations",
-  "author": "MikroTik Helper Workspace",
+  "author": "ep",
   "license": "UNLICENSED",
   "private": true,
   "main": "dist/main/main.cjs",
@@ -88,8 +88,10 @@
     "npmRebuild": false,
     "portable": {
       "artifactName": "MikroTik-Helper-Portable-${version}-${arch}.${ext}"
-    }
+    },
+    "copyright": "Development by ep"
   },
   "type": "module",
-  "desktopName": "mikrotik-helper.desktop"
+  "desktopName": "mikrotik-helper.desktop",
+  "copyright": "Development by ep"
 }

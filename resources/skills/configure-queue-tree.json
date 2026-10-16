@@ -1,7 +1,7 @@
 {
   "name": "configure-queue-tree",
   "title": "QoS Queue Tree + PCQ",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "plan-only",
   "purpose": "Packet marking upload/download dan parent HTB per arah.",
   "domains": [

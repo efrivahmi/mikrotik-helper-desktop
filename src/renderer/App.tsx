@@ -57,6 +57,8 @@ import { StandardsPanel } from "./StandardsPanel";
 import { QuickSetupPage } from "./QuickSetupPage";
 import { ConnectionGuidePage } from "./ConnectionGuidePage";
 import { QUICK_DISCOVERY_MODULES } from "../shared/quick-setup";
+import { DEVELOPMENT_IDENTITY, BACKUP_SCOPE_TEXT } from "../shared/local-agent";
+import { AgentActionCard } from "./AgentActions";
 
 const api = window.helper.invoke;
 const connectionLabels: Record<ConnectionState["status"], string> = {
@@ -426,6 +428,7 @@ export function App() {
             "diagnostic",
             "skill.run",
             "chat",
+            "agent.confirm",
             "plan.apply",
             "plan.reconcile",
             "automation.inspect",
@@ -437,7 +440,6 @@ export function App() {
           if (
             [
               "diagnostic",
-              "skill.run",
               "plan.apply",
               "plan.reconcile",
               "automation.inspect",
@@ -449,6 +451,7 @@ export function App() {
           }
         }
         await refresh();
+        if (["backup", "skill.run"].includes(method)) setView("agent");
         if (
           success &&
           result !== null &&
@@ -480,6 +483,12 @@ export function App() {
       typeof input === "string" ? input : input.id || input.request?.routerId;
     const target = state?.routers.find((r) => r.id === id);
     if (!target) return;
+    if (["backup", "skill.run"].includes(method))
+      return run(
+        method,
+        input,
+        "Rencana tindakan tersedia di Agent; tinjau dan konfirmasikan dahulu.",
+      );
     if (!target.fingerprint) {
       const report = (await run("router.diagnose", id)) as
         ConnectionReport | undefined;
@@ -536,10 +545,10 @@ export function App() {
   };
   const sendChat = async (text = chat) => {
     if (!selected || !text.trim()) return;
-    const result = await runRouter(
+    const result = await run(
       "chat",
       { id: selected, text },
-      "Agent mulai bekerja.",
+      "Permintaan ditinjau; konfirmasikan tindakan bila diperlukan.",
     );
     if (result) setChat("");
   };
@@ -602,6 +611,7 @@ export function App() {
             <span>Data tersimpan lokal</span>
           </div>
           <small>Helper Desktop · v{state.version}</small>
+          <small>{DEVELOPMENT_IDENTITY}</small>
           <button className="text-button" onClick={() => void run("data.open")}>
             Buka folder data <ArrowUpRight size={13} />
           </button>
@@ -1352,6 +1362,34 @@ export function App() {
                       : "Workflow lokal"}
                   </Badge>
                 </div>
+                {(state.agentActions || [])
+                  .filter(
+                    (a) => a.routerId === selected && a.status === "pending",
+                  )
+                  .map((action) => (
+                    <AgentActionCard
+                      key={action.id}
+                      action={action}
+                      router={router}
+                      disabled={busy || pending}
+                      onCancel={(id) =>
+                        void run("agent.cancel", id, "Tindakan dibatalkan.")
+                      }
+                      onConfirm={(a, backupConfirmed) =>
+                        void runRouter(
+                          "agent.confirm",
+                          {
+                            id: selected,
+                            actionId: a.id,
+                            hash: a.hash,
+                            confirmation: `${router.name} / ${a.hash.slice(0, 8)}`,
+                            backupConfirmed,
+                          },
+                          "Tindakan yang dikonfirmasi mulai diproses.",
+                        )
+                      }
+                    />
+                  ))}
                 <div className="messages">
                   {!messages.length && (
                     <div className="chat-welcome">
@@ -1365,7 +1403,10 @@ export function App() {
                         {[
                           "Periksa kondisi router sekarang",
                           "Evaluasi pemerataan bandwidth",
-                          "Buat backup konfigurasi",
+                          "Periksa DHCP dan HotSpot",
+                          "Periksa DNS",
+                          "Periksa keamanan akses administrasi",
+                          "Buat backup penuh",
                         ].map((t) => (
                           <button
                             disabled={busy}
@@ -1914,9 +1955,12 @@ export function App() {
                           <td>
                             {b.version}
                             <small className="block">
-                              {b.verifiedAt
-                                ? "Export + biner · hash cocok"
-                                : "Arsip lama · export saja"}
+                              {b.coverage === "configuration-and-user-files" &&
+                              b.filesManifestSha256
+                                ? `Konfigurasi + ${b.fileCount} entri file · hash cocok`
+                                : b.verifiedAt
+                                  ? "Arsip lama · export + biner saja"
+                                  : "Arsip lama · export saja"}
                             </small>
                           </td>
                           <td className="mono">{b.sha256.slice(0, 24)}…</td>
@@ -2019,7 +2063,8 @@ export function App() {
             {state.secureStorage
               ? "Credential: keyring OS tersedia"
               : "Credential: penyimpanan sesi tersedia"}{" "}
-            <span className="sep">·</span> {state.routers.length} router
+            <span className="sep">·</span> {state.routers.length} router{" "}
+            <span className="sep">·</span> {DEVELOPMENT_IDENTITY}
           </span>
         </footer>
       </div>
@@ -2269,7 +2314,11 @@ export function App() {
           router={router}
           pending={pending}
           onClose={() => setGrant(null)}
-          onConfirm={async (confirmation, acknowledgedRules) => {
+          onConfirm={async (
+            confirmation,
+            acknowledgedRules,
+            backupConfirmed,
+          ) => {
             const job = await run(
               "plan.apply",
               {
@@ -2277,6 +2326,7 @@ export function App() {
                 hash: grant.plan.hash,
                 confirmation,
                 acknowledgedRules,
+                backupConfirmed,
                 rollback: grant.rollback,
               },
               "Persetujuan diterima. Backup sedang dibuat sebelum import.",
@@ -2767,10 +2817,15 @@ function Grant({
   rollback: boolean;
   pending: boolean;
   onClose: () => void;
-  onConfirm: (text: string, acknowledgedRules: string[]) => Promise<void>;
+  onConfirm: (
+    text: string,
+    acknowledgedRules: string[],
+    backupConfirmed: boolean,
+  ) => Promise<void>;
 }) {
   const [text, setText] = useState("");
   const [acceptedWarnings, setAcceptedWarnings] = useState(false);
+  const [backupConfirmed, setBackupConfirmed] = useState(false);
   const warnings =
     plan.automation?.standards?.findings.filter(
       (f) => f.severity === "warning",
@@ -2805,6 +2860,17 @@ function Grant({
         selesai sebagian jika koneksi putus; aplikasi tidak mengulangnya
         otomatis. Verifikasi dilakukan sesudah import.
       </div>
+      <p>{BACKUP_SCOPE_TEXT}</p>
+      <label className="inline-check grant-warning-check">
+        <input
+          type="checkbox"
+          checked={backupConfirmed}
+          onChange={(e) => setBackupConfirmed(e.target.checked)}
+        />
+        Saya mengonfirmasi backup penuh baru sebelum{" "}
+        {rollback ? "rollback" : "apply"}. Hentikan bila cakupan, unduhan,
+        checksum atau pembacaan ulang gagal.
+      </label>
       {!rollback && warnings.length > 0 && (
         <label className="inline-check grant-warning-check">
           <input
@@ -2833,6 +2899,7 @@ function Grant({
           disabled={
             text !== phrase ||
             pending ||
+            !backupConfirmed ||
             (!rollback && warnings.length > 0 && !acceptedWarnings)
           }
           onClick={() =>
@@ -2841,6 +2908,7 @@ function Grant({
               !rollback && acceptedWarnings
                 ? [...new Set(warnings.map((f) => f.id))]
                 : [],
+              backupConfirmed,
             )
           }
         >
@@ -2912,7 +2980,7 @@ function SettingsPage({
               checked={s.aiEnabled}
               onChange={(e) => setS({ ...s, aiEnabled: e.target.checked })}
             />
-            Gunakan model untuk percakapan agent
+            Aktifkan analisis model melalui permintaan “analisis model: …”
           </label>
           <Field
             label="Base URL API"

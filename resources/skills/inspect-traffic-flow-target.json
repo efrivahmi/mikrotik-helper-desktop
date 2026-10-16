@@ -1,7 +1,7 @@
 {
   "name": "inspect-traffic-flow-target",
   "title": "Periksa Collector NetFlow",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Collector NetFlow langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

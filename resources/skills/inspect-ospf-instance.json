@@ -1,7 +1,7 @@
 {
   "name": "inspect-ospf-instance",
   "title": "Periksa OSPF instance",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi OSPF instance langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

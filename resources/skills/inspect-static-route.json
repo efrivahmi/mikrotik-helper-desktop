@@ -1,7 +1,7 @@
 {
   "name": "inspect-static-route",
   "title": "Periksa Route statis / failover",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi Route statis / failover langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

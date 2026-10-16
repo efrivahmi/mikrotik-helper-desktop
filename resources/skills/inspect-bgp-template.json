@@ -1,7 +1,7 @@
 {
   "name": "inspect-bgp-template",
   "title": "Periksa BGP template",
-  "version": "1.4.1",
+  "version": "1.5.0",
   "mode": "read-only",
   "purpose": "Baca konfigurasi BGP template langsung melalui SSH. Ketersediaan mengikuti RouterOS/package/hardware.",
   "domains": [

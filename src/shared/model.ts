@@ -1,5 +1,6 @@
 import { z } from "zod";
 import type { AutomationEvidence, AutomationRequest } from "./automation";
+import type { AgentAction } from "./local-agent";
 import { StandardsReportSchema } from "./standards";
 
 export const RouterSchema = z.object({
@@ -183,6 +184,12 @@ export interface Backup {
   binarySha256?: string;
   passwordPath?: string;
   verifiedAt?: string;
+  policyVersion?: string;
+  coverage?: "configuration-and-user-files";
+  filesManifestPath?: string;
+  filesManifestSha256?: string;
+  fileCount?: number;
+  restoreTested?: false;
 }
 export interface DeploymentProfile {
   id: string;
@@ -196,6 +203,7 @@ export interface Message {
   role: "user" | "assistant";
   text: string;
   createdAt: string;
+  targetHash?: string;
 }
 export const SettingsSchema = z.object({
   aiEnabled: z.boolean().default(false),
@@ -266,6 +274,7 @@ export interface AppState {
   version: string;
   secureStorage: boolean;
   hasAiKey: boolean;
+  agentActions: AgentAction[];
   automationEvidence?: AutomationEvidence[];
   deploymentProfiles?: DeploymentProfile[];
 }
